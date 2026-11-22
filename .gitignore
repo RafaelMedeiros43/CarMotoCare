@@ -1,0 +1,36 @@
+# Segredos e configuração local
+.env
+.env.*
+!.env.example
+
+# Dependências
+vendor/
+node_modules/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+
+# Builds e caches
+dist/
+build/
+*.log
+.phpunit.result.cache
+
+# Sistema e editores
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+
+# Claude Code 
+CLAUDE.md
+CLAUDE.local.md
+**/CLAUDE.md
+**/CLAUDE.local.md
+.claude/
+**/.claude/
+.mcp.json

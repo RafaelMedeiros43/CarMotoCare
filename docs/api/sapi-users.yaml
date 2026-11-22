@@ -1,0 +1,286 @@
+# Gerado a partir de "CarMotoCare - Endpoints por API (v7)" (19 nov. 2026).
+openapi: 3.0.3
+info:
+  title: CarMotoCare — SAPI Utilizadores
+  version: 7.0.0
+  description: 'System API interna: contas e palavras-passe. 5 operações. Usada pela EAPI Web (registo e login).'
+servers:
+- url: http://sapi-users:8082
+  description: Rede interna
+tags:
+- name: Sistema
+- name: Contas
+paths:
+  /health:
+    get:
+      tags:
+      - Sistema
+      summary: Estado da API
+      operationId: getHealth
+      responses:
+        '200':
+          description: API disponível
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+  /users:
+    post:
+      tags:
+      - Contas
+      summary: Criar conta
+      operationId: createUser
+      description: O e-mail é único (409 se já existir).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserCreate'
+      responses:
+        '201':
+          description: Conta criada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /authentications:
+    post:
+      tags:
+      - Contas
+      summary: Verificar credenciais
+      operationId: verifyCredentials
+      description: 200 com os dados da conta se as credenciais forem válidas; 401 caso contrário.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/Credentials'
+      responses:
+        '200':
+          description: Credenciais válidas
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+  /users/{userId}:
+    get:
+      tags:
+      - Contas
+      summary: Ver conta
+      operationId: getUser
+      parameters:
+      - $ref: '#/components/parameters/UserId'
+      responses:
+        '200':
+          description: Conta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags:
+      - Contas
+      summary: Alterar nome, e-mail e palavra-passe
+      operationId: updateUser
+      description: O e-mail é único. Para mudar e-mail ou palavra-passe exige a palavra-passe atual (401 se errada).
+      parameters:
+      - $ref: '#/components/parameters/UserId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: Conta atualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+components:
+  parameters:
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+  responses:
+    BadRequest:
+      description: Pedido inválido (validação de campos).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: Token ausente ou inválido.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Recurso não encontrado (ou não pertence ao utilizador).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: Conflito com o estado atual do recurso.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    BadGateway:
+      description: Serviço externo indisponível (Overpass).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    Problem:
+      type: object
+      properties:
+        type:
+          type: string
+          example: about:blank
+        title:
+          type: string
+          example: Pedido inválido
+        status:
+          type: integer
+          example: 400
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+            required:
+            - field
+            - message
+          description: Erros de validação por campo (só em 400).
+      required:
+      - title
+      - status
+      description: Erro no formato RFC 7807 (Problem Details).
+    Health:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - UP
+          example: UP
+      required:
+      - status
+    UserCreate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          example: Miguel Santos
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+          minLength: 8
+      required:
+      - name
+      - email
+      - password
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-11-06T10:48:00Z'
+      required:
+      - id
+      - name
+      - email
+      description: Nunca inclui a palavra-passe nem o hash.
+    Credentials:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+      required:
+      - email
+      - password
+    AuthResult:
+      type: object
+      properties:
+        userId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        email:
+          type: string
+          format: email
+      required:
+      - userId
+      - name
+      - email
+      description: Credenciais válidas. A EAPI Web usa estes dados para emitir o JWT.
+    UserUpdate:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+        email:
+          type: string
+          format: email
+        newPassword:
+          type: string
+          format: password
+          minLength: 8
+        currentPassword:
+          type: string
+          format: password
+          description: Obrigatória para mudar e-mail ou palavra-passe.
+      minProperties: 1

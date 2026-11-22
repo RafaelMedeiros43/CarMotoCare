@@ -1,0 +1,126 @@
+                          CarMotoCare - Endpoints por API
+                (v7, com as alterações da SAPI Veículos v8 de 22 nov. 2026)
+68 endpoints: EAPI Web 29 · SAPI Veículos 32 · SAPI Utilizadores 5 · SAPI Oficinas 2
+
+
+EAPI Web (29)
+ Método    Caminho                                            Funcionalidade
+ GET       /health                                            Estado da API
+ POST      /users                                             Registar conta
+ POST      /auth/tokens                                       Iniciar sessão (emite o JWT)
+ GET       /users/me                                          Ver a minha conta
+ PATCH     /users/me                                          Alterar nome, e-mail e palavra-passe (para mudar e-mail ou
+                                                              palavra-passe, exige a palavra-passe atual)
+ GET       /vehicles                                          Listar os meus veículos, cada um com a próxima manutenção
+                                                              (nextService) e o número de alertas abertos (openAlerts)
+ POST      /vehicles                                          Adicionar veículo: tipo, marca, modelo, firstRegistration
+                                                              (AAAA-MM), matrícula, km atual e, opcionais, iucValidUntil,
+                                                              insuranceValidUntil e inspectionValidUntil. Cria o plano de peças
+                                                              por defeito (um intervalo por peça, consoante seja carro ou moto)
+                                                              e os prazos pendentes indicados
+ GET       /vehicles/{vehicleId}                              Ver veículo (firstRegistration, nextService, openAlerts)
+ PATCH     /vehicles/{vehicleId}                              Editar dados descritivos do veículo (sem km nem prazos)
+ DELETE    /vehicles/{vehicleId}                              Remover veículo (apaga também os dados associados)
+ GET       /vehicles/{vehicleId}/deadlines                    Listar prazos legais (IUC, seguro e inspeção)
+ POST      /vehicles/{vehicleId}/deadlines                    Criar o prazo pendente de um tipo (IUC, seguro ou inspeção), a
+                                                              partir do formulário «Adicionar veículo»
+ PUT       /vehicles/{vehicleId}/obd-device                   Emparelhar (ou substituir) o dispositivo OBD do veículo
+ GET       /vehicles/{vehicleId}/obd-device                   Ver o dispositivo OBD emparelhado
+ DELETE    /vehicles/{vehicleId}/obd-device                   Desemparelhar o dispositivo OBD
+ GET       /vehicles/{vehicleId}/obd-state                    Último estado do veículo (leitura mais recente do OBD): km,
+                                                              oilTemp e gps, todos anuláveis; um parâmetro conta como
+                                                              suportado se vier preenchido
+ GET       /vehicles/{vehicleId}/maintenances                 Histórico de manutenções
+ POST      /vehicles/{vehicleId}/maintenances                 Registar manutenção (atualiza as peças e fecha os alertas
+                                                              dessas peças)
+ GET       /vehicles/{vehicleId}/maintenances/{maintenanc     Ver manutenção
+           eId}
+ PATCH     /vehicles/{vehicleId}/maintenances/{maintenanc     Corrigir custo e notas da manutenção
+           eId}
+ GET       /vehicles/{vehicleId}/inspections                  Listar inspeções periódicas
+ POST      /vehicles/{vehicleId}/inspections                  Registar inspeção periódica (date, result, amount, deficiencies[]);
+                                                              se aprovada, fecha o alerta anterior e cria o prazo seguinte; se
+                                                              reprovada, o prazo continua pendente
+ GET       /vehicles/{vehicleId}/inspections/{inspectionId}   Ver os detalhes de uma inspeção (resultado, validade, valor pago
+                                                              e deficiências)
+ GET       /vehicles/{vehicleId}/expenses                     Despesas totais do veículo, sem filtros no servidor; cada item traz
+                                                              id, category (MANUTENCAO, INSPECAO, IUC, SEGURO), date,
+                                                              amount, description e km (só em manutenção)
+ POST      /vehicles/{vehicleId}/expenses                     Pagar IUC ou seguro (category, date, amount, description,
+                                                              validUntil): paga o prazo pendente desse tipo (ou cria-o primeiro),
+                                                              cria o seguinte (com data validUntil) e fecha o alerta
+ GET       /vehicles/{vehicleId}/parts                        Listar peças do veículo com o intervalo de manutenção, o próximo
+                                                              valor, quanto falta e a origem do intervalo
+Método   Caminho                                            Funcionalidade
+PATCH    /vehicles/{vehicleId}/parts/{partId}               Alterar o intervalo (km e/ou meses) e a referência (data e km do
+                                                            último serviço)
+GET      /alerts                                            Listar alertas de todos os meus veículos, sem filtros no servidor
+GET      /workshops                                         Pesquisar oficinas próximas (OpenStreetMap/Overpass)
+
+
+SAPI Veículos (32)
+Método   Caminho                                            Funcionalidade
+GET      /health                                            Estado da API
+GET      /vehicles                                          Listar os veículos do utilizador, com nextService e openAlerts
+POST     /vehicles                                          Criar veículo (firstRegistration AAAA-MM) e plano de peças por
+                                                            defeito (um intervalo por peça, consoante seja carro ou moto)
+GET      /vehicles/{vehicleId}                              Ver veículo (firstRegistration, nextService, openAlerts)
+PATCH    /vehicles/{vehicleId}                              Alterar dados descritivos (não altera km nem prazos)
+DELETE   /vehicles/{vehicleId}                              Apagar veículo e tudo o que lhe pertence (cascata)
+PUT      /vehicles/{vehicleId}/mileage                      Atualizar a quilometragem (usado só pelo Microserviço OBD; não
+                                                            há inserção manual); responde com nextAlertKm
+GET      /vehicles/{vehicleId}/deadlines                    Listar prazos legais do veículo (IUC, seguro e inspeção)
+POST     /vehicles/{vehicleId}/deadlines                    Criar o prazo pendente de um tipo (IUC, seguro ou inspeção)
+PATCH    /vehicles/{vehicleId}/deadlines/{deadlineId}       Pagar um prazo (amount, paidAt, description e validUntil), criar o
+                                                            seguinte (com data validUntil) e fechar o alerta
+GET      /deadlines                                         Prazos pendentes de todos os veículos (microserviço)
+GET      /vehicles/{vehicleId}/parts                        Listar as peças do veículo com o intervalo, o próximo valor,
+                                                            quanto falta e a origem do intervalo
+PATCH    /vehicles/{vehicleId}/parts/{partId}               Alterar o intervalo (km e/ou meses; pelo menos um limite ativo) ou
+                                                            a referência (data e km do último serviço, km não superior à km
+                                                            atual)
+GET      /parts                                             Peças por filtro (microserviço de alertas): vehicleId,
+                                                            kmRemainingLte, dueWithinDays e openAlert
+GET      /vehicles/{vehicleId}/maintenances                 Histórico de manutenções
+POST     /vehicles/{vehicleId}/maintenances                 Registar manutenção (atualiza peças e fecha alertas)
+GET      /vehicles/{vehicleId}/maintenances/{maintenanc     Ver manutenção
+         eId}
+PATCH    /vehicles/{vehicleId}/maintenances/{maintenanc     Corrigir custo e notas (sem mexer em peças)
+         eId}
+GET      /vehicles/{vehicleId}/inspections                  Listar inspeções
+POST     /vehicles/{vehicleId}/inspections                  Registar inspeção (date, result, amount, deficiencies[]); a km vem
+                                                            do veículo; se aprovada, calcula a validade, fecha o alerta anterior
+                                                            e cria o prazo seguinte; se reprovada, o prazo continua pendente
+GET      /vehicles/{vehicleId}/inspections/{inspectionId}   Ver os detalhes de uma inspeção (resultado, validade, valor pago
+                                                            e deficiências)
+GET      /inspections                                       Inspeções a vencer de todos os veículos, isto é, os prazos de
+                                                            inspeção pendentes (microserviço)
+GET      /vehicles/{vehicleId}/expenses                     Despesas totais do veículo (id, category, date, amount,
+                                                            description, km em manutenção)
+GET      /alerts                                            Listar alertas
+POST     /alerts                                            Criar alerta (microserviço de alertas)
+GET      /alerts/{alertId}                                  Ver alerta (os alertas trazem userId)
+PUT      /vehicles/{vehicleId}/obd-device                   Emparelhar (ou substituir) o dispositivo OBD
+GET      /vehicles/{vehicleId}/obd-device                   Ver o dispositivo emparelhado
+DELETE   /vehicles/{vehicleId}/obd-device                   Desemparelhar o dispositivo
+Método   Caminho                                 Funcionalidade
+GET      /obd-devices/{deviceId}                 Veículo de um dispositivo OBD (microserviço OBD)
+POST     /vehicles/{vehicleId}/readings          Guardar uma leitura do OBD (microserviço OBD)
+GET      /vehicles/{vehicleId}/readings/latest   Leitura mais recente do veículo (km, oilTemp, gps anuláveis)
+
+
+SAPI Utilizadores (5)
+Método   Caminho                                 Funcionalidade
+GET      /health                                 Estado da API
+POST     /users                                  Criar conta
+POST     /authentications                        Verificar credenciais
+GET      /users/{userId}                         Ver conta
+PATCH    /users/{userId}                         Alterar nome, e-mail e palavra-passe (o e-mail é único; para
+                                                 mudar e-mail ou palavra-passe, exige a palavra-passe atual)
+
+
+SAPI Oficinas (2)
+Método   Caminho                                 Funcionalidade
+GET      /health                                 Estado da API
+GET      /workshops                              Pesquisar oficinas próximas (OpenStreetMap/Overpass)
+

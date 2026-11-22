@@ -1,3 +1,83 @@
 # CarMotoCare
 
-teste
+Aplicação web de gestão da manutenção de veículos (carros e motos), feita para a cadeira de
+Engenharia de Software. Cada utilizador regista os seus veículos e acompanha manutenções, inspeções,
+IUC, seguro e custos. Um dispositivo OBD simulado envia a quilometragem por MQTT e o sistema cria
+alertas quando uma peça se aproxima do fim do intervalo de manutenção ou quando um prazo legal se
+aproxima.
+
+Arquitetura API-led com eventos: React → Nginx → EAPI Web → System APIs, com um broker RabbitMQ (MQTT)
+entre o dispositivo OBD e dois microserviços. O desenho completo está em [`docs/`](docs/README.md).
+
+## Estrutura
+
+```
+carmotocare/
+├── docs/            desenho da fase 2 (contratos OpenAPI, arquitetura, modelo de dados, MQTT)
+├── infra/           configuração do Nginx, RabbitMQ e PostgreSQL
+├── backend/
+│   ├── eapi-web/        Experience API: REST + JWT + WebSocket (a única exposta)
+│   ├── sapi-users/      contas e autenticação
+│   ├── sapi-vehicles/   veículos, peças, prazos, manutenções, inspeções, alertas, OBD
+│   ├── sapi-workshops/  pesquisa de oficinas (Overpass / OpenStreetMap)
+│   ├── ms-obd/          valida leituras do OBD e atualiza a quilometragem
+│   └── ms-alerts/       cria alertas por km e por data
+├── frontend/        React + Vite (PWA)
+└── obd-simulator/   simulador do dispositivo OBD (Python)
+```
+
+## Correspondência relatório ↔ código
+
+| No relatório | No código |
+|---|---|
+| EAPI Web | `backend/eapi-web` |
+| SAPI Utilizadores | `backend/sapi-users` |
+| SAPI Veículos | `backend/sapi-vehicles` |
+| SAPI Oficinas | `backend/sapi-workshops` |
+| Microserviço OBD | `backend/ms-obd` |
+| Microserviço Manutenção e Alertas | `backend/ms-alerts` |
+| Dispositivo OBD Simulado | `obd-simulator` |
+
+## Tecnologias
+
+Laravel (PHP 8.3+) · React com Vite (JavaScript) · PostgreSQL (Supabase) · RabbitMQ com MQTT ·
+Laravel Reverb (WebSocket) · Nginx · Python (simulador) · OpenAPI 3.0.3
+
+## Como preparar o ambiente
+
+Requisitos: PHP 8.3+, Composer, Node (LTS), Python 3 e, mais tarde, Docker.
+
+```bash
+git clone <url-do-repositório>
+cd carmotocare
+
+# cada serviço Laravel
+cd backend/eapi-web && composer install && cp .env.example .env && php artisan key:generate
+# (repetir para os outros 5 serviços em backend/)
+
+# frontend
+cd frontend && npm install && npm run dev
+```
+
+O `docker-compose.yml` para arrancar tudo de uma vez vem numa fase seguinte.
+
+## Convenções
+
+- Código em inglês; textos da interface em português. Os nomes seguem os contratos em `docs/api/`.
+- Em cada serviço Laravel: Controller → Request (validação) → Service (regras) → Model ou Client →
+  Resource (JSON). Nada de lógica nos controllers.
+- Erros no formato RFC 7807 (`Problem`), como nos contratos.
+- Configuração só em `.env`; nunca fazer commit de palavras-passe.
+- Se uma alteração mudar um contrato, o modelo de dados ou um tópico, atualiza o ficheiro em `docs/`
+  no mesmo pull request.
+
+## Regras de Git
+
+- A `main` está protegida: tudo entra por pull request, revisto por outro membro.
+- Uma branch por tarefa: `feature/<serviço>-<descrição>` (ex.: `feature/sapi-vehicles-crud`),
+  `fix/<descrição>`, `docs/<descrição>`.
+- Commits curtos com prefixo: `feat:`, `fix:`, `docs:`, `chore:`, `test:`.
+
+## Grupo
+
+Grupo 2 · Engenharia de Software 2026/2027

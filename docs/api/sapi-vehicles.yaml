@@ -1,0 +1,1925 @@
+# v8 (22 nov. 2026): nextAlertKm no MileageResult, filtro openAlert em GET /parts e userId no Alert (resposta à pergunta do professor
+# sobre como o Microserviço Manutenção e Alertas conhece os intervalos mais recentes). Base: Endpoints por API (v7).
+openapi: 3.0.3
+info:
+  title: CarMotoCare — SAPI Veículos
+  version: 8.0.0
+  description: 'System API interna (sem exposição pública). Veículos, km, prazos, peças e intervalos, manutenções,
+    inspeções, custos, alertas, emparelhamento OBD, leituras e último estado. 32 operações.
+
+
+    Usada pela EAPI Web e pelos microserviços OBD e Manutenção e Alertas. Itens marcados PRESSUPOSTO não estão fixados
+    no PDF v7 e devem ser confirmados.'
+servers:
+- url: http://sapi-vehicles:8081
+  description: Rede interna
+tags:
+- name: Sistema
+- name: Veículos
+- name: Prazos
+- name: Peças
+- name: Manutenção
+- name: Inspeção
+- name: Custos
+- name: Alertas
+- name: OBD
+paths:
+  /health:
+    get:
+      tags:
+      - Sistema
+      summary: Estado da API
+      operationId: getHealth
+      responses:
+        '200':
+          description: API disponível
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Health'
+  /vehicles:
+    get:
+      tags:
+      - Veículos
+      summary: Listar os veículos do utilizador
+      operationId: listVehicles
+      description: Com `nextService` e `openAlerts`. Filtro opcional por tipo (`type`) e paginação simples (`limit`
+        e `offset`, aplicados na consulta à base de dados). O total vem no cabeçalho `X-Total-Count`.
+      parameters:
+      - $ref: '#/components/parameters/UserIdRequired'
+      - $ref: '#/components/parameters/VehicleTypeQ'
+      - $ref: '#/components/parameters/Limit'
+      - $ref: '#/components/parameters/Offset'
+      responses:
+        '200':
+          description: Veículos (uma página)
+          headers:
+            X-Total-Count:
+              description: Total de veículos que cumprem o filtro (sem paginação).
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Vehicle'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+    post:
+      tags:
+      - Veículos
+      summary: Criar veículo e plano de peças por defeito
+      operationId: createVehicle
+      description: 'Cria o veículo (`firstRegistration` AAAA-MM) e o plano de peças por defeito: um intervalo por
+        peça, consoante seja carro ou moto. Não cria prazos (a EAPI usa `POST /vehicles/{vehicleId}/deadlines`).'
+      parameters:
+      - $ref: '#/components/parameters/UserIdRequired'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleCreate'
+      responses:
+        '201':
+          description: Veículo criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+  /vehicles/{vehicleId}:
+    get:
+      tags:
+      - Veículos
+      summary: Ver veículo
+      operationId: getVehicle
+      parameters:
+      - $ref: '#/components/parameters/VehicleId'
+      - $ref: '#/components/parameters/UserIdOptional'
+      responses:
+        '200':
+          description: Veículo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags:
+      - Veículos
+      summary: Alterar dados descritivos
+      operationId: updateVehicle
+      description: Não altera km nem prazos.
+      parameters:
+      - $ref: '#/components/parameters/VehicleId'
+      - $ref: '#/components/parameters/UserIdOptional'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VehicleUpdate'
+      responses:
+        '200':
+          description: Veículo atualizado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Vehicle'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+      - Veículos
+      summary: Apagar veículo e tudo o que lhe pertence (cascata)
+      operationId: deleteVehicle
+      parameters:
+      - $ref: '#/components/parameters/VehicleId'
+      - $ref: '#/components/parameters/UserIdOptional'
+      responses:
+        '204':
+          description: Apagado
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /vehicles/{vehicleId}/mileage:
+    put:
+      tags:
+      - Veículos
+      summary: Atualizar a quilometragem
+      operationId: updateMileage
+      description: Usado só pelo Microserviço OBD; não há inserção manual (não existe na EAPI Web). 409 se a nova
+        km for inferior à atual (o microserviço só atualiza se subiu). A resposta traz `nextAlertKm`, que o microserviço
+        põe no tópico `app/vehicle/state`; assim o Microserviço Manutenção e Alertas recebe sempre o plano atualizado
+        sem consultar a SAPI a cada leitura.
+      parameters:
+      - $ref: '#/components/parameters/VehicleId'
+      - $ref: '#/components/parameters/UserIdOptional'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MileageUpdate'
+      responses:
+        '200':
+          description: Km atualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MileageResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /vehicles/{vehicleId}/deadlines:
+    get:
+      tags:
+      - Prazos
+      summary: Listar prazos legais do veículo (IUC, seguro e inspeção)
+      operationId: listDeadlines
+      parameters:
+      - $ref: '#/components/parameters/VehicleId'
+      - $ref: '#/components/parameters/UserIdOptional'
+      responses:
+        '200':
+          description: Prazos
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Deadline'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags:
+      - Prazos
+      summary: Criar o prazo pendente de um tipo
+      operationId: createDeadline
+      description: 409 se já existir prazo pendente desse tipo.
+      parameters:
+      - $ref: '#/components/parameters/VehicleId'
+      - $ref: '#/components/parameters/UserIdOptional'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeadlineCreate'
+      responses:
+        '201':
+          description: Prazo criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Deadline'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /vehicles/{vehicleId}/deadlines/{deadlineId}:
+    patch:
+      tags:
+      - Prazos
+      summary: Pagar um prazo
+      operationId: payDeadline
+      description: Marca o prazo como pago (`amount`, `paidAt`, `description`), cria o prazo seguinte com data `validUntil`
+        e fecha o alerta correspondente, tudo na mesma transação. Só a SAPI cria o prazo seguinte. Também regista
+        a despesa (categoria IUC ou SEGURO).
+      parameters:
+      - $ref: '#/components/parameters/VehicleId'
+      - $ref: '#/components/parameters/UserIdOptional'
+      - $ref: '#/components/parameters/DeadlineId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeadlinePay'
+      responses:
+        '200':
+          description: Prazo pago
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DeadlinePaymentResult'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /deadlines:
+    get:
+      tags:
+      - Prazos
+      summary: Prazos pendentes de todos os veículos
+      operationId: listPendingDeadlines
+      description: Para o Microserviço Manutenção e Alertas (alertas por data).
+      parameters:
+      - $ref: '#/components/parameters/DeadlineTypeQ'
+      - $ref: '#/components/parameters/DueBefore'
+      responses:
+        '200':
+          description: Prazos pendentes
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Deadline'
+  /vehicles/{vehicleId}/parts:
+    get:
+      tags:
+      - Peças
+      summary: Listar as peças do veículo
+      operationId: listParts
+      description: Com intervalo, próximo valor, quanto falta e origem do intervalo.
+      parameters:
+      - $ref: '#/components/parameters/VehicleId'
+      - $ref: '#/components/parameters/UserIdOptional'
+      responses:
+        '200':
+          description: Peças
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Part'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /vehicles/{vehicleId}/parts/{partId}:
+    patch:
+      tags:
+      - Peças
+      summary: Alterar intervalo ou referência
+      operationId: updatePart
+      description: Pelo menos um limite (km ou meses) tem de ficar ativo. `lastServiceKm` não pode ser superior
+        à km atual.
+      parameters:
+      - $ref: '#/components/parameters/VehicleId'
+      - $ref: '#/components/parameters/UserIdOptional'
+      - $ref: '#/components/parameters/PartId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PartUpdate'
+      responses:
+        '200':
+          description: Peça atualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Part'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /parts:
+    get:
+      tags:
+      - Peças
+      summary: Peças por filtro (microserviço de alertas)
+      operationId: filterParts
+      description: Usado pelo Microserviço Manutenção e Alertas quando `nextAlertKm - km <= 1000` (para saber que peças
+        precisam de alerta) e na tarefa diária (peças por data e verificação de segurança das peças por km).
+      parameters:
+      - $ref: '#/components/parameters/PartVehicle'
+      - $ref: '#/components/parameters/KmRemainingLte'
+      - $ref: '#/components/parameters/DueWithinDays'
+      - $ref: '#/components/parameters/OpenAlertQ'
+      responses:
+        '200':
+          description: Peças
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Part'
+  /vehicles/{vehicleId}/maintenances:
+    get:
+      tags:
+      - Manutenção
+      summary: Histórico de manutenções
+      operationId: listMaintenances
+      parameters:
+      - $ref: '#/components/parameters/VehicleId'
+      - $ref: '#/components/parameters/UserIdOptional'
+      responses:
+        '200':
+          description: Manutenções
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Maintenance'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags:
+      - Manutenção
+      summary: Registar manutenção
+      operationId: createMaintenance
+      description: Atualiza as peças indicadas e fecha os alertas dessas peças, na mesma transação.
+      parameters:
+      - $ref: '#/components/parameters/VehicleId'
+      - $ref: '#/components/parameters/UserIdOptional'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaintenanceCreate'
+      responses:
+        '201':
+          description: Manutenção registada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MaintenanceCreated'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /vehicles/{vehicleId}/maintenances/{maintenanceId}:
+    get:
+      tags:
+      - Manutenção
+      summary: Ver manutenção
+      operationId: getMaintenance
+      parameters:
+      - $ref: '#/components/parameters/VehicleId'
+      - $ref: '#/components/parameters/UserIdOptional'
+      - $ref: '#/components/parameters/MaintenanceId'
+      responses:
+        '200':
+          description: Manutenção
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Maintenance'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    patch:
+      tags:
+      - Manutenção
+      summary: Corrigir custo e notas (sem mexer em peças)
+      operationId: updateMaintenance
+      parameters:
+      - $ref: '#/components/parameters/VehicleId'
+      - $ref: '#/components/parameters/UserIdOptional'
+      - $ref: '#/components/parameters/MaintenanceId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MaintenanceUpdate'
+      responses:
+        '200':
+          description: Manutenção atualizada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Maintenance'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /vehicles/{vehicleId}/inspections:
+    get:
+      tags:
+      - Inspeção
+      summary: Listar inspeções
+      operationId: listInspections
+      parameters:
+      - $ref: '#/components/parameters/VehicleId'
+      - $ref: '#/components/parameters/UserIdOptional'
+      responses:
+        '200':
+          description: Inspeções
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Inspection'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    post:
+      tags:
+      - Inspeção
+      summary: Registar inspeção
+      operationId: createInspection
+      description: 'A km vem do veículo. Se aprovada: calcula a validade, fecha o alerta anterior e cria o prazo
+        seguinte. Se reprovada: o prazo continua pendente.'
+      parameters:
+      - $ref: '#/components/parameters/VehicleId'
+      - $ref: '#/components/parameters/UserIdOptional'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InspectionCreate'
+      responses:
+        '201':
+          description: Inspeção registada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InspectionCreated'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /vehicles/{vehicleId}/inspections/{inspectionId}:
+    get:
+      tags:
+      - Inspeção
+      summary: Ver os detalhes de uma inspeção
+      operationId: getInspection
+      description: Resultado, validade, valor pago e deficiências.
+      parameters:
+      - $ref: '#/components/parameters/VehicleId'
+      - $ref: '#/components/parameters/UserIdOptional'
+      - $ref: '#/components/parameters/InspectionId'
+      responses:
+        '200':
+          description: Inspeção
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Inspection'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /inspections:
+    get:
+      tags:
+      - Inspeção
+      summary: Inspeções a vencer de todos os veículos
+      operationId: listPendingInspections
+      description: Os prazos de inspeção pendentes (microserviço). Devolve também o veículo.
+      parameters:
+      - $ref: '#/components/parameters/DueBefore'
+      responses:
+        '200':
+          description: Inspeções a vencer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PendingInspection'
+  /vehicles/{vehicleId}/expenses:
+    get:
+      tags:
+      - Custos
+      summary: Despesas totais do veículo
+      operationId: listExpenses
+      description: 'Sem filtros. Cada item: id, category, date, amount, description, km (só em manutenção).'
+      parameters:
+      - $ref: '#/components/parameters/VehicleId'
+      - $ref: '#/components/parameters/UserIdOptional'
+      responses:
+        '200':
+          description: Despesas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Expense'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /alerts:
+    get:
+      tags:
+      - Alertas
+      summary: Listar alertas
+      operationId: listAlerts
+      description: Sem `X-User-Id` devolve alertas de todos os veículos (uso dos microserviços). Não existe endpoint
+        para fechar alertas.
+      parameters:
+      - $ref: '#/components/parameters/UserIdOptional'
+      - $ref: '#/components/parameters/AlertVehicle'
+      - $ref: '#/components/parameters/AlertStatusQ'
+      - $ref: '#/components/parameters/AlertTypeQ'
+      responses:
+        '200':
+          description: Alertas
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Alert'
+    post:
+      tags:
+      - Alertas
+      summary: Criar alerta (microserviço de alertas)
+      operationId: createAlert
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AlertCreate'
+      responses:
+        '201':
+          description: Alerta criado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+  /alerts/{alertId}:
+    get:
+      tags:
+      - Alertas
+      summary: Ver alerta
+      operationId: getAlert
+      parameters:
+      - $ref: '#/components/parameters/AlertId'
+      - $ref: '#/components/parameters/UserIdOptional'
+      responses:
+        '200':
+          description: Alerta
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Alert'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /vehicles/{vehicleId}/obd-device:
+    put:
+      tags:
+      - OBD
+      summary: Emparelhar (ou substituir) o dispositivo OBD
+      operationId: pairObdDevice
+      parameters:
+      - $ref: '#/components/parameters/VehicleId'
+      - $ref: '#/components/parameters/UserIdOptional'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ObdDevicePair'
+      responses:
+        '200':
+          description: Dispositivo emparelhado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObdDevice'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+        '409':
+          $ref: '#/components/responses/Conflict'
+    get:
+      tags:
+      - OBD
+      summary: Ver o dispositivo emparelhado
+      operationId: getObdDevice
+      parameters:
+      - $ref: '#/components/parameters/VehicleId'
+      - $ref: '#/components/parameters/UserIdOptional'
+      responses:
+        '200':
+          description: Dispositivo
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObdDevice'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags:
+      - OBD
+      summary: Desemparelhar o dispositivo
+      operationId: unpairObdDevice
+      parameters:
+      - $ref: '#/components/parameters/VehicleId'
+      - $ref: '#/components/parameters/UserIdOptional'
+      responses:
+        '204':
+          description: Desemparelhado
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /obd-devices/{deviceId}:
+    get:
+      tags:
+      - OBD
+      summary: Veículo de um dispositivo OBD (microserviço OBD)
+      operationId: getObdDeviceById
+      parameters:
+      - $ref: '#/components/parameters/DeviceId'
+      responses:
+        '200':
+          description: Dispositivo e veículo associado
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObdDeviceLookup'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /vehicles/{vehicleId}/readings:
+    post:
+      tags:
+      - OBD
+      summary: Guardar uma leitura do OBD (microserviço OBD)
+      operationId: createReading
+      parameters:
+      - $ref: '#/components/parameters/VehicleId'
+      - $ref: '#/components/parameters/UserIdOptional'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReadingCreate'
+      responses:
+        '201':
+          description: Leitura guardada
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObdState'
+        '400':
+          $ref: '#/components/responses/BadRequest'
+        '404':
+          $ref: '#/components/responses/NotFound'
+  /vehicles/{vehicleId}/readings/latest:
+    get:
+      tags:
+      - OBD
+      summary: Leitura mais recente do veículo
+      operationId: getLatestReading
+      description: km, oilTemp e gps anuláveis; um parâmetro conta como suportado se vier preenchido. Sem leituras
+        devolve 200 com tudo nulo.
+      parameters:
+      - $ref: '#/components/parameters/VehicleId'
+      - $ref: '#/components/parameters/UserIdOptional'
+      responses:
+        '200':
+          description: Última leitura (campos anuláveis)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ObdState'
+        '404':
+          $ref: '#/components/responses/NotFound'
+components:
+  parameters:
+    VehicleTypeQ:
+      name: type
+      in: query
+      required: false
+      schema:
+        $ref: '#/components/schemas/VehicleType'
+      description: Filtra os veículos por tipo (CARRO ou MOTO). Se omitido, devolve todos.
+    Limit:
+      name: limit
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 100
+        default: 20
+      description: Número máximo de veículos por página.
+    Offset:
+      name: offset
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 0
+        default: 0
+      description: Número de veículos a saltar (início da página).
+    VehicleId:
+      name: vehicleId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    DeadlineId:
+      name: deadlineId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    MaintenanceId:
+      name: maintenanceId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    InspectionId:
+      name: inspectionId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    PartId:
+      name: partId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    AlertId:
+      name: alertId
+      in: path
+      required: true
+      schema:
+        type: string
+        format: uuid
+    DeviceId:
+      name: deviceId
+      in: path
+      required: true
+      schema:
+        type: string
+    UserIdRequired:
+      name: X-User-Id
+      in: header
+      required: true
+      schema:
+        type: string
+        format: uuid
+      description: 'Utilizador autenticado, enviado pela EAPI Web a partir do JWT (PRESSUPOSTO: a SAPI é interna
+        e confia neste cabeçalho).'
+    UserIdOptional:
+      name: X-User-Id
+      in: header
+      required: false
+      schema:
+        type: string
+        format: uuid
+      description: Se presente, a SAPI verifica que o recurso pertence a este utilizador (senão 404). Os microserviços
+        não o enviam.
+    AlertVehicle:
+      name: vehicleId
+      in: query
+      schema:
+        type: string
+        format: uuid
+      description: Filtra por veículo.
+    AlertStatusQ:
+      name: status
+      in: query
+      schema:
+        $ref: '#/components/schemas/AlertStatus'
+      description: Filtra por estado.
+    AlertTypeQ:
+      name: type
+      in: query
+      schema:
+        $ref: '#/components/schemas/AlertType'
+      description: Filtra por tipo.
+    DeadlineTypeQ:
+      name: type
+      in: query
+      schema:
+        $ref: '#/components/schemas/DeadlineType'
+      description: Filtra por tipo de prazo.
+    DueBefore:
+      name: dueBefore
+      in: query
+      schema:
+        type: string
+        format: date
+        example: '2026-11-24'
+      description: Só prazos com data limite até esta data (inclusive).
+    PartVehicle:
+      name: vehicleId
+      in: query
+      schema:
+        type: string
+        format: uuid
+      description: Filtra por veículo.
+    KmRemainingLte:
+      name: kmRemainingLte
+      in: query
+      schema:
+        type: integer
+      description: 'Só peças com km em falta menor ou igual a este valor (PRESSUPOSTO: o PDF só diz "peças por filtro").'
+    DueWithinDays:
+      name: dueWithinDays
+      in: query
+      schema:
+        type: integer
+        minimum: 0
+      description: Só peças cuja data prevista ocorre nos próximos N dias (PRESSUPOSTO).
+    OpenAlertQ:
+      name: openAlert
+      in: query
+      schema:
+        type: boolean
+      description: false = só peças sem alerta aberto; true = só peças com alerta aberto. Se omitido, devolve todas.
+  responses:
+    BadRequest:
+      description: Pedido inválido (validação de campos).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Unauthorized:
+      description: Token ausente ou inválido.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    NotFound:
+      description: Recurso não encontrado (ou não pertence ao utilizador).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    Conflict:
+      description: Conflito com o estado atual do recurso.
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+    BadGateway:
+      description: Serviço externo indisponível (Overpass).
+      content:
+        application/problem+json:
+          schema:
+            $ref: '#/components/schemas/Problem'
+  schemas:
+    Problem:
+      type: object
+      properties:
+        type:
+          type: string
+          example: about:blank
+        title:
+          type: string
+          example: Pedido inválido
+        status:
+          type: integer
+          example: 400
+        detail:
+          type: string
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+              message:
+                type: string
+            required:
+            - field
+            - message
+          description: Erros de validação por campo (só em 400).
+      required:
+      - title
+      - status
+      description: Erro no formato RFC 7807 (Problem Details).
+    Health:
+      type: object
+      properties:
+        status:
+          type: string
+          enum:
+          - UP
+          example: UP
+      required:
+      - status
+    YearMonth:
+      type: string
+      pattern: ^\d{4}-(0[1-9]|1[0-2])$
+      example: 2021-06
+      description: Mês e ano (AAAA-MM).
+    VehicleType:
+      type: string
+      enum:
+      - CARRO
+      - MOTO
+      description: Tipo de veículo. Define o plano de peças por defeito.
+    DeadlineType:
+      type: string
+      enum:
+      - IUC
+      - SEGURO
+      - INSPECAO
+    DeadlineStatus:
+      type: string
+      enum:
+      - PENDENTE
+      - CONCLUIDO
+    ExpenseCategory:
+      type: string
+      enum:
+      - MANUTENCAO
+      - INSPECAO
+      - IUC
+      - SEGURO
+    InspectionResult:
+      type: string
+      enum:
+      - APROVADA
+      - REPROVADA
+    DeficiencySeverity:
+      type: string
+      enum:
+      - LIGEIRA
+      - GRAVE
+    MaintenanceType:
+      type: string
+      enum:
+      - REVISAO_PERIODICA
+      - MUDANCA_OLEO
+      - SUBSTITUICAO_PNEUS
+      - REPARACAO
+      - AVARIA
+      - OUTRO
+    IntervalSource:
+      type: string
+      enum:
+      - CATALOGO
+      - UTILIZADOR
+      description: 'Origem do intervalo: plano por defeito ou definido pelo utilizador.'
+    AlertType:
+      type: string
+      enum:
+      - IUC
+      - SEGURO
+      - INSPECAO
+      - MANUTENCAO
+    AlertTrigger:
+      type: string
+      enum:
+      - KM
+      - DATA
+    AlertStatus:
+      type: string
+      enum:
+      - ABERTO
+      - FECHADO
+    NextService:
+      type: object
+      properties:
+        partId:
+          type: string
+          format: uuid
+        partName:
+          type: string
+          example: Pastilhas de travão
+        targetKm:
+          type: integer
+          minimum: 0
+          example: 68420
+          description: Km previstos para o próximo serviço da peça.
+        kmRemaining:
+          type: integer
+          example: 6580
+          description: Km em falta (pode ser negativo se ultrapassado).
+        dueDate:
+          type: string
+          format: date
+          example: '2026-11-24'
+          description: Data prevista (só se a peça tiver intervalo em meses).
+          nullable: true
+      required:
+      - partId
+      - partName
+      - targetKm
+      - kmRemaining
+      description: Peça com menos km em falta, calculada pela SAPI Veículos.
+    Vehicle:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/VehicleType'
+        brand:
+          type: string
+          example: Volkswagen
+        model:
+          type: string
+          example: Golf
+        firstRegistration:
+          $ref: '#/components/schemas/YearMonth'
+        plate:
+          type: string
+          example: AB-24-CD
+        km:
+          type: integer
+          minimum: 0
+          example: 68420
+          description: Quilometragem atual. Só é atualizada pelo Microserviço OBD (não há inserção manual).
+        nextService:
+          nullable: true
+          allOf:
+          - $ref: '#/components/schemas/NextService'
+          description: Nulo se o veículo não tiver peças com intervalo ativo.
+        openAlerts:
+          type: integer
+          minimum: 0
+          example: 1
+          description: Número de alertas abertos.
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-11-06T10:48:00Z'
+      required:
+      - id
+      - userId
+      - type
+      - brand
+      - model
+      - firstRegistration
+      - plate
+      - km
+      - nextService
+      - openAlerts
+    VehicleCreate:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/VehicleType'
+        brand:
+          type: string
+          minLength: 1
+          example: Volkswagen
+        model:
+          type: string
+          minLength: 1
+          example: Golf
+        firstRegistration:
+          $ref: '#/components/schemas/YearMonth'
+        plate:
+          type: string
+          pattern: ^[A-Z0-9]{2}-[A-Z0-9]{2}-[A-Z0-9]{2}$
+          example: AB-24-CD
+        km:
+          type: integer
+          minimum: 0
+          example: 68420
+          description: Quilometragem atual indicada ao adicionar o veículo (valor inicial).
+      required:
+      - type
+      - brand
+      - model
+      - firstRegistration
+      - plate
+      - km
+      description: Cria o veículo e o plano de peças por defeito (um intervalo por peça, consoante seja carro ou
+        moto).
+    VehicleUpdate:
+      type: object
+      properties:
+        brand:
+          type: string
+          minLength: 1
+        model:
+          type: string
+          minLength: 1
+        firstRegistration:
+          $ref: '#/components/schemas/YearMonth'
+        plate:
+          type: string
+          pattern: ^[A-Z0-9]{2}-[A-Z0-9]{2}-[A-Z0-9]{2}$
+          example: AB-24-CD
+      minProperties: 1
+      description: Só dados descritivos. Não altera km, prazos nem o tipo do veículo.
+    Deadline:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        vehicleId:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/DeadlineType'
+        status:
+          $ref: '#/components/schemas/DeadlineStatus'
+        dueDate:
+          type: string
+          format: date
+          example: '2026-11-24'
+          description: Data limite (a "validade" do período anterior).
+        paidAt:
+          type: string
+          format: date
+          example: '2026-11-24'
+          nullable: true
+        amount:
+          type: number
+          format: double
+          minimum: 0
+          example: 146.0
+          description: Valor em euros.
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-11-06T10:48:00Z'
+      required:
+      - id
+      - vehicleId
+      - type
+      - status
+      - dueDate
+    DeadlineCreate:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/DeadlineType'
+        dueDate:
+          type: string
+          format: date
+          example: '2026-11-24'
+          description: Data limite do prazo pendente.
+      required:
+      - type
+      - dueDate
+    DeadlinePay:
+      type: object
+      properties:
+        amount:
+          type: number
+          format: double
+          minimum: 0
+          example: 146.0
+          description: Valor em euros.
+          exclusiveMinimum: true
+        paidAt:
+          type: string
+          format: date
+          example: '2026-11-24'
+        description:
+          type: string
+          example: IUC 2026
+        validUntil:
+          type: string
+          format: date
+          example: '2026-11-24'
+          description: Nova validade. É a data do prazo seguinte.
+      required:
+      - amount
+      - paidAt
+      - validUntil
+    DeadlinePaymentResult:
+      type: object
+      properties:
+        deadline:
+          $ref: '#/components/schemas/Deadline'
+        nextDeadline:
+          $ref: '#/components/schemas/Deadline'
+        closedAlertIds:
+          type: array
+          items:
+            type: string
+            format: uuid
+      required:
+      - deadline
+      - nextDeadline
+      - closedAlertIds
+      description: Prazo pago, prazo seguinte (data = validUntil) e alertas fechados, tudo na mesma transação.
+    Expense:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        category:
+          $ref: '#/components/schemas/ExpenseCategory'
+        date:
+          type: string
+          format: date
+          example: '2026-11-24'
+        amount:
+          type: number
+          format: double
+          minimum: 0
+          example: 146.0
+          description: Valor em euros.
+        description:
+          type: string
+          nullable: true
+        km:
+          type: integer
+          minimum: 0
+          example: 68420
+          description: Só em despesas de manutenção.
+          nullable: true
+      required:
+      - id
+      - category
+      - date
+      - amount
+      - description
+      - km
+    MaintenancePart:
+      type: object
+      properties:
+        partId:
+          type: string
+          format: uuid
+        partName:
+          type: string
+        cost:
+          type: number
+          format: double
+          minimum: 0
+          example: 146.0
+          description: Valor em euros.
+          nullable: true
+      required:
+      - partId
+    MaintenancePartInput:
+      type: object
+      properties:
+        partId:
+          type: string
+          format: uuid
+        cost:
+          type: number
+          format: double
+          minimum: 0
+          example: 146.0
+          description: Valor em euros.
+      required:
+      - partId
+    Maintenance:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        vehicleId:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/MaintenanceType'
+        date:
+          type: string
+          format: date
+          example: '2026-11-24'
+        km:
+          type: integer
+          minimum: 0
+          example: 68420
+          description: Quilómetros.
+        cost:
+          type: number
+          format: double
+          minimum: 0
+          example: 146.0
+          description: Valor em euros.
+        notes:
+          type: string
+          nullable: true
+        parts:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaintenancePart'
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-11-06T10:48:00Z'
+      required:
+      - id
+      - vehicleId
+      - type
+      - date
+      - km
+      - cost
+      - parts
+    MaintenanceCreate:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/MaintenanceType'
+        date:
+          type: string
+          format: date
+          example: '2026-11-24'
+        km:
+          type: integer
+          minimum: 0
+          example: 68420
+          description: Quilometragem na intervenção. Se omitida, usa a km atual do veículo (PRESSUPOSTO a confirmar).
+        cost:
+          type: number
+          format: double
+          minimum: 0
+          example: 146.0
+          description: Valor em euros.
+        notes:
+          type: string
+          example: Verificar ABS na próxima revisão.
+        parts:
+          type: array
+          items:
+            $ref: '#/components/schemas/MaintenancePartInput'
+          description: Peças do plano do veículo que foram substituídas. Cada peça atualiza o último serviço (data
+            e km).
+      required:
+      - type
+      - date
+      - cost
+    MaintenanceCreated:
+      allOf:
+      - $ref: '#/components/schemas/Maintenance'
+      - type: object
+        properties:
+          closedAlertIds:
+            type: array
+            items:
+              type: string
+              format: uuid
+            description: Alertas fechados por esta manutenção (uma ou mais peças atualizadas).
+        required:
+        - closedAlertIds
+    MaintenanceUpdate:
+      type: object
+      properties:
+        cost:
+          type: number
+          format: double
+          minimum: 0
+          example: 146.0
+          description: Valor em euros.
+        notes:
+          type: string
+      minProperties: 1
+      description: Corrige só custo e notas. Não mexe em peças.
+    Deficiency:
+      type: object
+      properties:
+        description:
+          type: string
+          example: Desgaste irregular dos pneus traseiros
+        severity:
+          $ref: '#/components/schemas/DeficiencySeverity'
+      required:
+      - description
+      - severity
+    Inspection:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        vehicleId:
+          type: string
+          format: uuid
+        date:
+          type: string
+          format: date
+          example: '2026-11-24'
+        result:
+          $ref: '#/components/schemas/InspectionResult'
+        amount:
+          type: number
+          format: double
+          minimum: 0
+          example: 146.0
+          description: Valor em euros.
+        km:
+          type: integer
+          minimum: 0
+          example: 68420
+          description: Km do veículo no momento do registo (vem do veículo).
+        validUntil:
+          type: string
+          format: date
+          example: '2026-11-24'
+          description: Só se aprovada.
+          nullable: true
+        deficiencies:
+          type: array
+          items:
+            $ref: '#/components/schemas/Deficiency'
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-11-06T10:48:00Z'
+      required:
+      - id
+      - vehicleId
+      - date
+      - result
+      - amount
+      - km
+      - validUntil
+      - deficiencies
+    InspectionCreate:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date
+          example: '2026-11-24'
+        result:
+          $ref: '#/components/schemas/InspectionResult'
+        amount:
+          type: number
+          format: double
+          minimum: 0
+          example: 146.0
+          description: Valor em euros.
+        deficiencies:
+          type: array
+          items:
+            $ref: '#/components/schemas/Deficiency'
+      required:
+      - date
+      - result
+      - amount
+    InspectionCreated:
+      allOf:
+      - $ref: '#/components/schemas/Inspection'
+      - type: object
+        properties:
+          nextDeadline:
+            nullable: true
+            allOf:
+            - $ref: '#/components/schemas/Deadline'
+            description: Prazo de inspeção seguinte (só se aprovada).
+          closedAlertIds:
+            type: array
+            items:
+              type: string
+              format: uuid
+        required:
+        - nextDeadline
+        - closedAlertIds
+    Part:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        vehicleId:
+          type: string
+          format: uuid
+        name:
+          type: string
+          example: Óleo e filtros
+        intervalKm:
+          type: integer
+          minimum: 0
+          example: 68420
+          description: Intervalo em km.
+          nullable: true
+        intervalMonths:
+          type: integer
+          minimum: 1
+          example: 12
+          description: Intervalo em meses.
+          nullable: true
+        intervalSource:
+          $ref: '#/components/schemas/IntervalSource'
+        lastServiceKm:
+          type: integer
+          minimum: 0
+          example: 68420
+          description: Quilómetros.
+          nullable: true
+        lastServiceDate:
+          type: string
+          format: date
+          example: '2026-11-24'
+          nullable: true
+        nextKm:
+          type: integer
+          minimum: 0
+          example: 68420
+          description: Próximo valor em km.
+          nullable: true
+        nextDate:
+          type: string
+          format: date
+          example: '2026-11-24'
+          description: Próxima data (se houver intervalo em meses).
+          nullable: true
+        kmRemaining:
+          type: integer
+          example: 9020
+          description: Km em falta.
+          nullable: true
+        daysRemaining:
+          type: integer
+          example: 75
+          description: Dias em falta (se houver intervalo em meses).
+          nullable: true
+      required:
+      - id
+      - vehicleId
+      - name
+      - intervalKm
+      - intervalMonths
+      - intervalSource
+    PartUpdate:
+      type: object
+      properties:
+        intervalKm:
+          type: integer
+          minimum: 1
+          description: Nulo desativa o limite por km.
+          nullable: true
+        intervalMonths:
+          type: integer
+          minimum: 1
+          description: Nulo desativa o limite por tempo.
+          nullable: true
+        lastServiceDate:
+          type: string
+          format: date
+          example: '2026-11-24'
+        lastServiceKm:
+          type: integer
+          minimum: 0
+          example: 68420
+          description: Não pode ser superior à km atual do veículo.
+      minProperties: 1
+      description: Altera o intervalo (km e/ou meses; pelo menos um limite ativo) e/ou a referência (data e km do
+        último serviço). Um intervalo alterado passa a origem UTILIZADOR.
+    Alert:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        vehicleId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+          description: Dono do veículo. O microserviço usa-o no tópico app/alert/created para a EAPI escolher o canal
+            WebSocket.
+        type:
+          $ref: '#/components/schemas/AlertType'
+        trigger:
+          $ref: '#/components/schemas/AlertTrigger'
+        status:
+          $ref: '#/components/schemas/AlertStatus'
+        title:
+          type: string
+          example: Inspeção periódica
+        partId:
+          type: string
+          format: uuid
+          nullable: true
+        deadlineId:
+          type: string
+          format: uuid
+          nullable: true
+        dueDate:
+          type: string
+          format: date
+          example: '2026-11-24'
+          nullable: true
+        targetKm:
+          type: integer
+          minimum: 0
+          example: 68420
+          description: Quilómetros.
+          nullable: true
+        kmRemaining:
+          type: integer
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+          example: '2026-11-06T10:48:00Z'
+        closedAt:
+          type: string
+          format: date-time
+          example: '2026-11-06T10:48:00Z'
+          nullable: true
+      required:
+      - id
+      - vehicleId
+      - userId
+      - type
+      - trigger
+      - status
+      - title
+      - createdAt
+    Gps:
+      type: object
+      properties:
+        latitude:
+          type: number
+          example: 37.7417
+        longitude:
+          type: number
+          example: -25.671
+      required:
+      - latitude
+      - longitude
+    ObdDevicePair:
+      type: object
+      properties:
+        deviceId:
+          type: string
+          example: OBD-7F3A-0001
+          description: Referência do dispositivo (etiqueta).
+        name:
+          type: string
+          example: OBD do Golf
+          description: Nome na aplicação (opcional; PRESSUPOSTO, vem do ecrã 15).
+      required:
+      - deviceId
+    ObdDevice:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        name:
+          type: string
+          nullable: true
+        vehicleId:
+          type: string
+          format: uuid
+        pairedAt:
+          type: string
+          format: date-time
+          example: '2026-11-06T10:48:00Z'
+        lastReadingAt:
+          type: string
+          format: date-time
+          example: '2026-11-06T10:48:00Z'
+          nullable: true
+      required:
+      - deviceId
+      - vehicleId
+      - pairedAt
+    ObdState:
+      type: object
+      properties:
+        vehicleId:
+          type: string
+          format: uuid
+        deviceId:
+          type: string
+          nullable: true
+        readAt:
+          type: string
+          format: date-time
+          example: '2026-11-06T10:48:00Z'
+          nullable: true
+        km:
+          type: integer
+          minimum: 0
+          example: 68420
+          description: Quilómetros.
+          nullable: true
+        oilTemp:
+          type: number
+          example: 89.0
+          description: Temperatura do óleo em °C.
+          nullable: true
+        gps:
+          nullable: true
+          allOf:
+          - $ref: '#/components/schemas/Gps'
+      required:
+      - vehicleId
+      - readAt
+      - km
+      - oilTemp
+      - gps
+      description: Última leitura do OBD. km, oilTemp e gps são anuláveis; um parâmetro conta como suportado se
+        vier preenchido. Sem leituras, vem tudo nulo (a km do veículo é o valor inicial).
+    MileageUpdate:
+      type: object
+      properties:
+        km:
+          type: integer
+          minimum: 0
+          example: 68420
+          description: Quilómetros.
+      required:
+      - km
+    MileageResult:
+      type: object
+      properties:
+        vehicleId:
+          type: string
+          format: uuid
+        km:
+          type: integer
+          minimum: 0
+          example: 68420
+          description: Quilómetros.
+        previousKm:
+          type: integer
+          minimum: 0
+          example: 68420
+          description: Quilómetros.
+        nextAlertKm:
+          type: integer
+          minimum: 0
+          example: 70000
+          nullable: true
+          description: Menor nextKm (km do último serviço + intervalo em km) entre as peças do veículo com limite por
+            km ativo e sem alerta aberto. Nulo se não houver nenhuma. A regra dos 1000 km fica no microserviço.
+      required:
+      - vehicleId
+      - km
+      - previousKm
+      - nextAlertKm
+      description: O Microserviço OBD usa `previousKm` e `nextAlertKm` para publicar `app/vehicle/state` (km, previousKm
+        e nextAlertKm).
+    ObdDeviceLookup:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        vehicleId:
+          type: string
+          format: uuid
+        userId:
+          type: string
+          format: uuid
+      required:
+      - deviceId
+      - vehicleId
+      - userId
+    ReadingCreate:
+      type: object
+      properties:
+        deviceId:
+          type: string
+        readAt:
+          type: string
+          format: date-time
+          example: '2026-11-06T10:48:00Z'
+        km:
+          type: integer
+          minimum: 0
+          example: 68420
+          description: Quilómetros.
+          nullable: true
+        oilTemp:
+          type: number
+          nullable: true
+        gps:
+          nullable: true
+          allOf:
+          - $ref: '#/components/schemas/Gps'
+      required:
+      - deviceId
+      - readAt
+      description: Leitura do OBD já validada pelo Microserviço OBD. km, oilTemp e gps anuláveis.
+    AlertCreate:
+      type: object
+      properties:
+        vehicleId:
+          type: string
+          format: uuid
+        type:
+          $ref: '#/components/schemas/AlertType'
+        trigger:
+          $ref: '#/components/schemas/AlertTrigger'
+        title:
+          type: string
+        partId:
+          type: string
+          format: uuid
+        deadlineId:
+          type: string
+          format: uuid
+        dueDate:
+          type: string
+          format: date
+          example: '2026-11-24'
+        targetKm:
+          type: integer
+          minimum: 0
+          example: 68420
+          description: Quilómetros.
+        kmRemaining:
+          type: integer
+      required:
+      - vehicleId
+      - type
+      - trigger
+      - title
+      description: Criado pelo Microserviço Manutenção e Alertas. 409 se já existir alerta aberto equivalente (mesmo
+        veículo, tipo e peça/prazo). Depois da criação o microserviço publica `app/alert/created`.
+    PendingInspection:
+      type: object
+      properties:
+        deadline:
+          $ref: '#/components/schemas/Deadline'
+        vehicle:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+            userId:
+              type: string
+              format: uuid
+            type:
+              $ref: '#/components/schemas/VehicleType'
+            brand:
+              type: string
+            model:
+              type: string
+            plate:
+              type: string
+            km:
+              type: integer
+              minimum: 0
+              example: 68420
+              description: Quilómetros.
+          required:
+          - id
+          - userId
+          - type
+          - plate
+          - km
+      required:
+      - deadline
+      - vehicle
