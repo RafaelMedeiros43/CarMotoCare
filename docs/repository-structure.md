@@ -40,6 +40,19 @@ app/Clients            chamadas HTTP a outros serviços
 app/Console/Commands   subscritores MQTT (microserviços e EAPI)
 routes/api.php · database/migrations e seeders (só SAPIs) · tests/Feature · Dockerfile
 
+== Pastas por serviço ==
+Serviço          Requests  Resources  Services  Clients  Console/Commands
+eapi-web            x         x          x         x           x
+sapi-users          x         x          x
+sapi-vehicles       x         x          x
+sapi-workshops      x         x          x         x
+ms-obd                                   x         x           x
+ms-alerts                                x         x           x
+
+Clients:  EAPI -> SAPIs · microserviços -> SAPI Veículos · SAPI Oficinas -> Overpass API
+Commands: EAPI ouve app/alert/created · ms-obd ouve obd/telemetry/{deviceId}
+          · ms-alerts ouve app/vehicle/state e corre a tarefa diária de alertas
+
 == Dentro do frontend ==
 src/pages · src/components · src/api · src/context · src/hooks · src/styles
 
