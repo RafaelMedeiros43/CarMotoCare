@@ -1188,8 +1188,9 @@ components:
           type: number
           format: double
           minimum: 0
+          exclusiveMinimum: true
           example: 146.0
-          description: Valor em euros.
+          description: Valor em euros (só depois de pago).
           nullable: true
         description:
           type: string
@@ -1544,8 +1545,8 @@ components:
           example: Óleo e filtros
         intervalKm:
           type: integer
-          minimum: 0
-          example: 68420
+          minimum: 1
+          example: 10000
           description: Intervalo em km.
           nullable: true
         intervalMonths:
@@ -1560,13 +1561,12 @@ components:
           type: integer
           minimum: 0
           example: 68420
-          description: Quilómetros.
-          nullable: true
+          description: Km do último serviço (ao criar o veículo, a km indicada).
         lastServiceDate:
           type: string
           format: date
           example: '2026-11-24'
-          nullable: true
+          description: Data do último serviço (ao criar o veículo, a data de criação).
         nextKm:
           type: integer
           minimum: 0
@@ -1596,6 +1596,8 @@ components:
       - intervalKm
       - intervalMonths
       - intervalSource
+      - lastServiceKm
+      - lastServiceDate
     PartUpdate:
       type: object
       properties:

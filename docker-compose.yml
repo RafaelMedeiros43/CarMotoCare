@@ -35,7 +35,6 @@ services:
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - pgdata:/var/lib/postgresql/data
-      - ./infra/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "127.0.0.1:5432:5432"
     healthcheck:
@@ -82,14 +81,22 @@ services:
       - "127.0.0.1:8080:8080"
 
   # ---------- System APIs ----------
+  # Ambas as SAPIs migram para o mesmo schema (public). sapi-vehicles só arranca depois de
+  # sapi-users estar saudável, porque vehicles.user_id tem FK para users (ver docs/data/data-model.md, D3).
   sapi-vehicles:
     <<: *laravel
+    depends_on:
+      postgres:
+        condition: service_healthy
+      rabbitmq:
+        condition: service_healthy
+      sapi-users:
+        condition: service_healthy
     volumes:
       - ./backend/sapi-vehicles:/app
       - sapi_vehicles_vendor:/app/vendor   # dependências dentro do Docker (rápido no Windows)
     environment:
       <<: *db-env
-      DB_SCHEMA: vehicles
       PORT: 8081
       RUN_MIGRATIONS: "true"
     ports:
@@ -102,11 +109,18 @@ services:
       - sapi_users_vendor:/app/vendor   # dependências dentro do Docker (rápido no Windows)
     environment:
       <<: *db-env
-      DB_SCHEMA: users
       PORT: 8082
       RUN_MIGRATIONS: "true"
     ports:
       - "127.0.0.1:8082:8082"
+    # O entrypoint corre as migrações antes de arrancar o servidor: "healthy" = tabela users criada.
+    # A imagem não tem curl, por isso o teste usa PHP.
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://localhost:8082/health') ? 0 : 1);"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 120s   # primeiro arranque: composer install dentro do contentor
 
   sapi-workshops:
     <<: *laravel
