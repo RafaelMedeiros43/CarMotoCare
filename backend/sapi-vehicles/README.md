@@ -6,4 +6,4 @@ System API interna: veículos, quilometragem, peças e intervalos, prazos legais
 
 **No relatório:** SAPI Veículos
 
-Base de dados: schema `vehicles` ([modelo](../../docs/data/data-model.md)). Calcula o `nextAlertKm` devolvido em `PUT /vehicles/{id}/mileage`.
+Base de dados: tabelas de veículos no schema `public`, partilhado com sapi-users; `vehicles.user_id` tem FK para `users` ([modelo](../../docs/data/data-model.md)). Migrações registadas em `migrations_vehicles`. Calcula o `nextAlertKm` devolvido em `PUT /vehicles/{id}/mileage`.

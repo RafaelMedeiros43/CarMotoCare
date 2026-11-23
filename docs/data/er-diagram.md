@@ -1,5 +1,8 @@
 # Diagrama ER (v3)
 
+Todas as tabelas estão no schema `public` da base `carmotocare`. `users` é da SAPI Utilizadores; as restantes
+são da SAPI Veículos. Ver [data-model.md](data-model.md), D3.
+
 ```mermaid
 erDiagram
     USERS {
@@ -11,7 +14,7 @@ erDiagram
     }
     VEHICLES {
         uuid id PK
-        uuid user_id "sem FK (outra SAPI)"
+        uuid user_id FK "ON DELETE CASCADE"
         varchar type "CARRO | MOTO"
         varchar brand
         varchar model
@@ -51,7 +54,8 @@ erDiagram
     }
     MAINTENANCE_PARTS {
         uuid maintenance_id PK,FK
-        uuid part_id PK,FK
+        uuid part_id PK,FK "NO ACTION"
+        uuid vehicle_id FK "mesmo veículo (D10)"
         numeric cost "informativo"
     }
     INSPECTIONS {
@@ -76,11 +80,10 @@ erDiagram
         varchar trigger "KM | DATA"
         varchar status "ABERTO | FECHADO"
         varchar title
-        uuid part_id FK "ou"
-        uuid deadline_id FK "ou"
-        date due_date
-        int target_km
-        int km_remaining
+        uuid part_id FK "ou (mesmo veículo)"
+        uuid deadline_id FK "ou (mesmo veículo e tipo)"
+        date due_date "se trigger DATA"
+        int target_km "se trigger KM"
         timestamptz created_at
         timestamptz closed_at
     }
@@ -102,7 +105,7 @@ erDiagram
         numeric longitude
     }
 
-    USERS ||..o{ VEHICLES : "tem (via API)"
+    USERS ||--o{ VEHICLES : tem
     VEHICLES ||--o{ PARTS : tem
     VEHICLES ||--o{ DEADLINES : tem
     VEHICLES ||--o{ MAINTENANCES : tem
