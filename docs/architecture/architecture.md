@@ -1,8 +1,7 @@
 # Arquitetura (v17)
 
 CarMotoCare — Diagrama de arquitetura v17 (22 nov. 2026)
-Muda em relação à v16 (pergunta do professor na apresentação da fase 2: como é que o Microserviço Manutenção e
-Alertas tem os intervalos mais recentes?):
+Muda em relação à v16:
 - A SAPI Veículos devolve nextAlertKm na resposta de PUT /mileage (menor nextKm das peças sem alerta aberto).
 - O Microserviço OBD põe esse valor no tópico app/vehicle/state.
 - O Microserviço Manutenção e Alertas só consulta a SAPI quando nextAlertKm - km <= 1000, e tem uma tarefa diária
