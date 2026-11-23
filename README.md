@@ -83,6 +83,36 @@ utilizador de demonstração.
 `migrate:rollback` segue a ordem inversa: primeiro na sapi-vehicles, depois na sapi-users. Ao contrário, o
 rollback da sapi-users para com um erro, porque `users` não pode ser apagada enquanto `vehicles` existir.
 
+## Testes
+
+Os testes automáticos correm dentro dos contentores, com o stack a correr (`docker compose up`):
+
+```bash
+docker compose exec sapi-users php artisan test
+docker compose exec sapi-vehicles php artisan test
+```
+
+Cada SAPI tem uma base só para testes (`carmotocare_test_users` e `carmotocare_test_vehicles`), apagada e
+recriada a cada execução. A base de desenvolvimento (`carmotocare`) nunca é usada pelos testes: o `phpunit.xml`
+aponta para a base de testes e o `tests/TestCase.php` recusa correr noutra base. Usa-se PostgreSQL e não SQLite
+porque as migrações usam funcionalidades do PostgreSQL.
+
+As bases de testes são criadas por `infra/postgres/init/` quando o volume do Postgres é criado. Num volume que
+já existia antes disto, criar uma vez à mão:
+
+```bash
+docker compose exec postgres createdb -U carmotocare carmotocare_test_users
+docker compose exec postgres createdb -U carmotocare carmotocare_test_vehicles
+```
+
+Notas para quem escreve testes:
+- usar `use RefreshDatabase;` em cada classe de testes que mexa na base (ver os exemplos em
+  `tests/Feature/UserModelTest.php` e `tests/Feature/DatabaseRulesTest.php`);
+- nos testes da sapi-vehicles a tabela `users` existe (criada por `tests/database/migrations`), mas não há
+  modelo `User`: inserir com `DB::table('users')->insert(...)`;
+- cada teste corre numa transação que nunca é confirmada, por isso as FKs `DEFERRED` só são verificadas se o
+  teste fizer `DB::statement('SET CONSTRAINTS ALL IMMEDIATE')`.
+
 ## Convenções
 
 - Código em inglês; textos da interface em português. Os nomes seguem os contratos em `docs/api/`.
