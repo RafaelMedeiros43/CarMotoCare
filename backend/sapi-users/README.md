@@ -6,4 +6,4 @@ System API interna: contas e verificação de credenciais (registo e login). Usa
 
 **No relatório:** SAPI Utilizadores
 
-Base de dados: schema `users` ([modelo](../../docs/data/data-model.md)).
+Base de dados: tabela `users` no schema `public`, partilhado com sapi-vehicles ([modelo](../../docs/data/data-model.md)). Migrações registadas em `migrations_users`; esta SAPI tem de migrar antes de sapi-vehicles.

@@ -61,6 +61,28 @@ cd frontend && npm install && npm run dev
 
 O `docker-compose.yml` para arrancar tudo de uma vez vem numa fase seguinte.
 
+## Reset da base de dados
+
+A sapi-users e a sapi-vehicles partilham a mesma base e o mesmo schema (`public`), e `vehicles.user_id` tem
+chave estrangeira para `users` ([modelo de dados](docs/data/data-model.md), D3). Por isso **não se usa
+`php artisan migrate:fresh`**: corrido numa SAPI, apagava também as tabelas da outra.
+
+Para recomeçar do zero em desenvolvimento:
+
+```bash
+docker compose exec postgres psql -U carmotocare -d carmotocare -c "DROP SCHEMA public CASCADE; CREATE SCHEMA public;"
+docker compose restart sapi-users      # recria users (migrações correm no arranque)
+docker compose restart sapi-vehicles   # recria as tabelas de veículos (precisa de users)
+docker compose exec sapi-users php artisan db:seed
+docker compose exec sapi-vehicles php artisan db:seed
+```
+
+Os seeders correm por esta ordem (primeiro sapi-users) porque os veículos de demonstração pertencem ao
+utilizador de demonstração.
+
+`migrate:rollback` segue a ordem inversa: primeiro na sapi-vehicles, depois na sapi-users. Ao contrário, o
+rollback da sapi-users para com um erro, porque `users` não pode ser apagada enquanto `vehicles` existir.
+
 ## Convenções
 
 - Código em inglês; textos da interface em português. Os nomes seguem os contratos em `docs/api/`.

@@ -23,8 +23,8 @@ carmotocare/
 
 == Correspondência relatório ↔ código ==
 EAPI Web                           -> backend/eapi-web
-SAPI Utilizadores                  -> backend/sapi-users       (schema users)
-SAPI Veículos                      -> backend/sapi-vehicles    (schema vehicles)
+SAPI Utilizadores                  -> backend/sapi-users       (tabela users)
+SAPI Veículos                      -> backend/sapi-vehicles    (tabelas de veículos)
 SAPI Oficinas                      -> backend/sapi-workshops
 Microserviço OBD                   -> backend/ms-obd
 Microserviço Manutenção e Alertas  -> backend/ms-alerts

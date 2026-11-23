@@ -4,4 +4,4 @@ Configuração que não é código de serviço. Preenche-se quando se fizer o `d
 
 - `nginx/`: load balancer / reverse proxy à frente da EAPI Web (REST e WebSocket).
 - `rabbitmq/`: plugin MQTT ativo, utilizadores internos e permissões por tópico.
-- `postgres/`: `init.sql` que cria os schemas `users` e `vehicles` (desenvolvimento local).
+- `postgres/`: vazio. A base usa o schema `public` por defeito; as tabelas são criadas pelas migrações de sapi-users e sapi-vehicles.
