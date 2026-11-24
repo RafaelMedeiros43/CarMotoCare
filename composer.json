@@ -1,0 +1,17 @@
+{
+  "name": "carmotocare/obd-simulator",
+  "description": "Simulador do dispositivo OBD do CarMotoCare (PHP + php-mqtt/client)",
+  "type": "project",
+  "license": "proprietary",
+  "require": {
+    "php": "^8.3",
+    "ext-json": "*",
+    "php-mqtt/client": "^2.3"
+  },
+  "config": {
+    "optimize-autoloader": true,
+    "sort-packages": true
+  },
+  "minimum-stability": "stable",
+  "prefer-stable": true
+}
