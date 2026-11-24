@@ -3,6 +3,7 @@
 use App\Http\Controllers\MeController;
 use App\Http\Controllers\TokenController;
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\VehicleController;
 use Illuminate\Support\Facades\Route;
 
 Route::get('/health', fn () => ['status' => 'UP']);
@@ -15,4 +16,14 @@ Route::post('/auth/tokens', [TokenController::class, 'store']);
 Route::middleware('auth.jwt')->group(function () {
     Route::get('/users/me', [MeController::class, 'show']);
     Route::patch('/users/me', [MeController::class, 'update']);
+
+    Route::get('/vehicles', [VehicleController::class, 'index']);
+    Route::post('/vehicles', [VehicleController::class, 'store']);
+
+    // whereUuid: an id that is not a UUID is a 404 and never reaches the sapi-vehicles.
+    Route::whereUuid('vehicleId')->group(function () {
+        Route::get('/vehicles/{vehicleId}', [VehicleController::class, 'show']);
+        Route::patch('/vehicles/{vehicleId}', [VehicleController::class, 'update']);
+        Route::delete('/vehicles/{vehicleId}', [VehicleController::class, 'destroy']);
+    });
 });
