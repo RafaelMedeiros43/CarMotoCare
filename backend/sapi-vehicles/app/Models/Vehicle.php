@@ -32,6 +32,40 @@ class Vehicle extends Model
         ];
     }
 
+    /**
+     * Part with the fewest km remaining (NextService in the contract; docs/data/data-model.md, section 4).
+     * Only parts with a km interval count. Needs the "parts" relation loaded. Null if there is none.
+     *
+     * @return array{partId: string, partName: string, targetKm: int, kmRemaining: int, dueDate: ?string}|null
+     */
+    public function nextService(): ?array
+    {
+        $next = null;
+
+        foreach ($this->parts as $part) {
+            if ($part->interval_km === null) {
+                continue;
+            }
+
+            $targetKm = $part->last_service_km + $part->interval_km;
+            $kmRemaining = $targetKm - $this->km;
+
+            if ($next === null || $kmRemaining < $next['kmRemaining']) {
+                $next = [
+                    'partId' => $part->id,
+                    'partName' => $part->name,
+                    'targetKm' => $targetKm,
+                    'kmRemaining' => $kmRemaining,
+                    'dueDate' => $part->interval_months === null
+                        ? null
+                        : $part->last_service_date->copy()->addMonthsNoOverflow($part->interval_months)->toDateString(),
+                ];
+            }
+        }
+
+        return $next;
+    }
+
     public function parts(): HasMany
     {
         return $this->hasMany(Part::class);
