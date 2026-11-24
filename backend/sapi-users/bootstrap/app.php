@@ -1,5 +1,6 @@
 <?php
 
+use App\Exceptions\ProblemRenderer;
 use Illuminate\Foundation\Application;
 use Illuminate\Foundation\Configuration\Exceptions;
 use Illuminate\Foundation\Configuration\Middleware;
@@ -12,9 +13,13 @@ return Application::configure(basePath: dirname(__DIR__))
         apiPrefix: '',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        //
+        // Do not trim passwords (the camelCase names of the contract are not in Laravel's default list).
+        $middleware->trimStrings(except: ['password', 'currentPassword', 'newPassword']);
     })
     ->withExceptions(function (Exceptions $exceptions): void {
         // This service only serves JSON, so errors are always rendered as JSON.
         $exceptions->shouldRenderJsonWhen(fn () => true);
+
+        // Every error is returned as RFC 7807 Problem Details (application/problem+json).
+        $exceptions->render(new ProblemRenderer);
     })->create();
