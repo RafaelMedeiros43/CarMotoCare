@@ -121,6 +121,31 @@ class SapiVehiclesClientTest extends TestCase
             && $r->header('X-User-Id') === [self::USER_ID]);
     }
 
+    public function test_maintenance_and_expense_calls_use_the_right_urls_and_the_user_header(): void
+    {
+        $maintenance = ['id' => 'm1', 'vehicleId' => self::VEHICLE_ID];
+        Http::fake([
+            self::URL.'/vehicles/'.self::VEHICLE_ID.'/maintenances' => Http::sequence()
+                ->push([$maintenance], 200)
+                ->push($maintenance + ['closedAlertIds' => []], 201),
+            self::URL.'/vehicles/'.self::VEHICLE_ID.'/maintenances/m1' => Http::sequence()
+                ->push($maintenance, 200)
+                ->push($maintenance, 200),
+            self::URL.'/vehicles/'.self::VEHICLE_ID.'/expenses' => Http::response([['id' => 'e1']], 200),
+        ]);
+        $client = new SapiVehiclesClient;
+
+        $this->assertSame([$maintenance], $client->listMaintenances(self::USER_ID, self::VEHICLE_ID));
+        $this->assertSame($maintenance + ['closedAlertIds' => []], $client->createMaintenance(self::USER_ID, self::VEHICLE_ID, ['type' => 'OUTRO']));
+        $this->assertSame($maintenance, $client->getMaintenance(self::USER_ID, self::VEHICLE_ID, 'm1'));
+        $this->assertSame($maintenance, $client->updateMaintenance(self::USER_ID, self::VEHICLE_ID, 'm1', ['cost' => 1]));
+        $this->assertSame([['id' => 'e1']], $client->listExpenses(self::USER_ID, self::VEHICLE_ID));
+
+        Http::assertSentCount(5);
+        Http::assertSent(fn (Request $r) => $r->method() === 'PATCH' && $r->data() === ['cost' => 1]);
+        Http::assertSent(fn (Request $r) => str_ends_with($r->url(), '/expenses') && $r->header('X-User-Id') === [self::USER_ID]);
+    }
+
     public function test_business_errors_are_rethrown_with_the_same_status_and_field_errors(): void
     {
         $errors = [['field' => 'plate', 'message' => 'Já existe um veículo com esta matrícula.']];

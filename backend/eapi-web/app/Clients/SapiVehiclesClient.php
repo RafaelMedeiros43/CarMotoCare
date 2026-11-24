@@ -97,6 +97,63 @@ class SapiVehiclesClient
         return $this->send($userId, fn (PendingRequest $http) => $http->post($this->vehiclePath($vehicleId).'/deadlines', $data))->json() ?? [];
     }
 
+    /**
+     * GET /vehicles/{vehicleId}/maintenances
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function listMaintenances(string $userId, string $vehicleId): array
+    {
+        return $this->send($userId, fn (PendingRequest $http) => $http->get($this->vehiclePath($vehicleId).'/maintenances'))->json() ?? [];
+    }
+
+    /**
+     * POST /vehicles/{vehicleId}/maintenances (the SAPI updates the parts and closes their alerts)
+     *
+     * @param  array<string, mixed>  $data
+     * @return array<string, mixed>  the maintenance plus closedAlertIds
+     */
+    public function createMaintenance(string $userId, string $vehicleId, array $data): array
+    {
+        return $this->send($userId, fn (PendingRequest $http) => $http->post($this->vehiclePath($vehicleId).'/maintenances', $data))->json() ?? [];
+    }
+
+    /**
+     * GET /vehicles/{vehicleId}/maintenances/{maintenanceId}
+     *
+     * @return array<string, mixed>
+     */
+    public function getMaintenance(string $userId, string $vehicleId, string $maintenanceId): array
+    {
+        return $this->send($userId, fn (PendingRequest $http) => $http->get($this->maintenancePath($vehicleId, $maintenanceId)))->json() ?? [];
+    }
+
+    /**
+     * PATCH /vehicles/{vehicleId}/maintenances/{maintenanceId}
+     *
+     * @param  array{cost?: float|int, notes?: ?string}  $data
+     * @return array<string, mixed>
+     */
+    public function updateMaintenance(string $userId, string $vehicleId, string $maintenanceId, array $data): array
+    {
+        return $this->send($userId, fn (PendingRequest $http) => $http->patch($this->maintenancePath($vehicleId, $maintenanceId), $data))->json() ?? [];
+    }
+
+    /**
+     * GET /vehicles/{vehicleId}/expenses
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function listExpenses(string $userId, string $vehicleId): array
+    {
+        return $this->send($userId, fn (PendingRequest $http) => $http->get($this->vehiclePath($vehicleId).'/expenses'))->json() ?? [];
+    }
+
+    private function maintenancePath(string $vehicleId, string $maintenanceId): string
+    {
+        return $this->vehiclePath($vehicleId).'/maintenances/'.rawurlencode($maintenanceId);
+    }
+
     private function vehiclePath(string $vehicleId): string
     {
         return '/vehicles/'.rawurlencode($vehicleId);
