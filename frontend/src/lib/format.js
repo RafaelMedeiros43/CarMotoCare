@@ -9,8 +9,8 @@ const parseDate = (value) => {
   return { y, m, d }
 }
 
-const numberPt = new Intl.NumberFormat('pt-PT')
-const euroPt = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR' })
+const numberPt = new Intl.NumberFormat('pt-PT', { useGrouping: 'always' })
+const euroPt = new Intl.NumberFormat('pt-PT', { style: 'currency', currency: 'EUR', useGrouping: 'always' })
 
 export const formatKm = (km) => (km == null ? '—' : `${numberPt.format(km)} km`)
 export const formatEuro = (value) => euroPt.format(value)
@@ -38,7 +38,7 @@ export function formatMonthYearLong(value) {
 export const formatToday = () =>
   new Intl.DateTimeFormat('pt-PT', { day: 'numeric', month: 'long', year: 'numeric' }).format(new Date())
 
-/** Dias entre hoje e uma data "AAAA-MM-DD" (negativo = já passou). */
+/** Dias entre hoje e uma data "AAAA-MM-DD" */
 export function daysUntil(value) {
   const { y, m, d } = parseDate(value)
   const target = Date.UTC(y, m - 1, d)
@@ -73,3 +73,13 @@ export function initials(name = '') {
 export const minutesSince = (iso) => (Date.now() - new Date(iso).getTime()) / 60000
 
 export const currentYear = () => new Date().getFullYear()
+
+/** "AB-24-CD" -> "AB·24·CD"  */
+export const formatPlateDots = (plate) => plate.replaceAll('-', '·')
+
+/** Data/hora ISO -> "6 nov. 2026 · 10:48" (hora local) */
+export function formatDateTime(iso) {
+  const d = new Date(iso)
+  const time = d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })
+  return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()} · ${time}`
+}

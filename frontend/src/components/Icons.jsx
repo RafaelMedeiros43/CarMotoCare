@@ -1,5 +1,8 @@
 // Ícones em SVG (estilo  do Figma), sem dependências externas pedido IA
 const PATHS = {
+  trash: (<><path d="M10 11v6M14 11v6" /><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" /><path d="M3 6h18" /><path d="M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" /></>),
+  x: (<path d="M18 6 6 18M6 6l12 12" />),
+  arrowUpRight: (<path d="M7 7h10v10M7 17 17 7" />),
   car: (<><path d="m21 8-2 2-1.5-3.7A2 2 0 0 0 15.646 5H8.4a2 2 0 0 0-1.903 1.257L5 10 3 8" /><path d="M7 14h.01M17 14h.01" /><rect width="18" height="8" x="3" y="10" rx="2" /><path d="M5 18v2M19 18v2" /></>),
   bike: (<><circle cx="18.5" cy="17.5" r="3.5" /><circle cx="5.5" cy="17.5" r="3.5" /><circle cx="15" cy="5" r="1" /><path d="M12 17.5V14l-3-3 4-3 2 3h2" /></>),
   wrench: (<path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94z" />),

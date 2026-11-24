@@ -1,0 +1,71 @@
+/* Figma "10 Consultar veículo" (/veiculos/:id) e "12 Remover veículo" (diálogo).
+   Reutiliza .acct*, .acct-card, .acct-btn e .acct-tag de app.css. */
+
+.vd { gap: 24px; }
+.vd .acct-card { flex: none; }
+
+/* ---------- Identidade ---------- */
+.vd-main { gap: 20px; }
+.vd-id { display: flex; align-items: center; gap: 22px; }
+.vd-id__tile { display: grid; place-items: center; width: 84px; height: 84px; border-radius: 14px; background: var(--blue-bg); color: var(--color-primary); flex-shrink: 0; }
+.vd-id__text { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: flex-start; gap: 6px; }
+.vd-id__text h2 { font-size: 25px; font-weight: 700; line-height: 1.25; letter-spacing: -0.3px; color: var(--color-ink); }
+.vd-id__text p { font-size: 14px; line-height: 1.5; color: var(--muted); }
+.vd-id__actions { display: flex; align-items: center; gap: 12px; flex-shrink: 0; }
+.vd-remove { height: 44px; padding: 0 17px; border: 0; border-radius: 8px; background: none; font: inherit; font-size: 13px; font-weight: 600; color: #b93838; cursor: pointer; }
+.vd-remove:hover { background: #fdf0f0; }
+
+.vd-facts { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 28px; margin: 0; line-height: 1.5; }
+.vd-facts dt { font-size: 12px; color: var(--muted); }
+.vd-facts dd { margin: 6px 0 0; font-size: 14px; font-weight: 600; color: var(--color-ink); word-break: break-word; }
+
+/* ---------- Indicadores ---------- */
+.vd-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; }
+.vd-stat { display: flex; flex-direction: column; gap: 10px; padding: 22px; border: 1px solid #e1e7ef; border-radius: 14px; background: #fff; }
+.vd-stat p { font-size: 13px; line-height: 1.5; color: var(--muted); }
+.vd-stat strong { font-size: 30px; font-weight: 400; letter-spacing: -0.7px; color: var(--color-ink); }
+.vd-stat small { font-size: 12px; line-height: 1.5; color: var(--muted); }
+.vd-stat--accent { background: var(--blue-bg); border-color: var(--blue-bg); }
+.vd-stat--accent strong { color: var(--color-primary); }
+
+/* ---------- Cuidado do veículo ---------- */
+.vd-care { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; align-items: start; }
+.vd-care__tile { display: flex; flex-direction: column; gap: 12px; padding: 18px; border-radius: 10px; background: var(--soft); text-decoration: none; color: var(--color-ink); }
+.vd-care__tile:hover { background: var(--blue-bg); }
+.vd-care__top { display: flex; align-items: center; justify-content: space-between; color: var(--color-primary); }
+.vd-care__top svg:last-child { color: var(--muted); }
+.vd-care__tile strong { font-size: 14px; font-weight: 600; line-height: 1.5; }
+.vd-care__tile > span:last-child { font-size: 12px; line-height: 1.5; color: var(--muted); }
+
+/* ---------- Diálogo "Remover este veículo?" ---------- */
+.rm-dialog { width: min(560px, calc(100% - 32px)); padding: 0; border: 0; border-radius: 20px; background: #fff; color: var(--color-ink); box-shadow: 0 24px 60px -20px rgba(0, 0, 0, 0.5); }
+.rm-dialog::backdrop { background: rgba(16, 31, 51, 0.88); }
+.rm-dialog__body { display: flex; flex-direction: column; gap: 20px; padding: 32px; line-height: normal; }
+.rm-dialog__head { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.rm-dialog__head h2 { font-size: 24px; font-weight: 700; line-height: 1.25; letter-spacing: -0.5px; }
+.rm-dialog__close { display: grid; place-items: center; width: 32px; height: 32px; border: 0; border-radius: 8px; background: none; color: var(--muted); cursor: pointer; }
+.rm-dialog__close:hover { background: var(--soft); color: var(--color-ink); }
+.rm-dialog__text { font-size: 14px; line-height: 1.5; color: var(--muted); }
+.rm-dialog__vehicle { display: flex; align-items: center; gap: 16px; padding: 20px; border: 1px solid #e1e7ef; border-radius: 12px; background: var(--soft); }
+.rm-dialog__icon { display: grid; place-items: center; width: 38px; flex-shrink: 0; color: var(--color-primary); }
+.rm-dialog__vehicle > div { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.rm-dialog__vehicle strong { font-size: 20px; font-weight: 700; letter-spacing: -0.3px; }
+.rm-dialog__vehicle span:not(.rm-dialog__icon) { font-size: 13px; color: var(--muted); }
+.rm-dialog .form-error { margin: 0; }
+.rm-dialog .acct-sep { margin: 0; }
+.rm-dialog__danger { background: #b93838; border-color: #b93838; color: #fff; }
+.rm-dialog__danger:hover { background: #a02f2f; border-color: #a02f2f; }
+
+@media (max-width: 1100px) {
+  .vd-stats { grid-template-columns: minmax(0, 1fr); }
+  .vd-care { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 760px) {
+  .vd-id { flex-wrap: wrap; }
+  .vd-id__actions { width: 100%; }
+  .vd-facts { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 20px; }
+}
+@media (max-width: 520px) {
+  .vd-care { grid-template-columns: minmax(0, 1fr); }
+  .rm-dialog__body { padding: 24px 20px; }
+}

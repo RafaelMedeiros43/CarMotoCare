@@ -8,11 +8,14 @@ import Login from './pages/Login.jsx'
 import Register from './pages/Register.jsx'
 import Dashboard from './pages/Dashboard.jsx'
 import Vehicles from './pages/Vehicles.jsx'
+import AddVehicle from './pages/AddVehicle.jsx'
+import VehicleDetail from './pages/VehicleDetail.jsx'
+import EditVehicle from './pages/EditVehicle.jsx'
 import ComingSoon from './pages/ComingSoon.jsx'
 import Account from './pages/Account.jsx'
 import { useAuth } from './context/AuthContext.jsx'
 
-// Rota privada: sem sessão, volta ao login.
+// Rota privada: sem sessão, volta ao login
 function Private({ children }) {
   const { isAuthenticated } = useAuth()
   return isAuthenticated ? children : <Navigate to="/entrar" replace />
@@ -63,10 +66,12 @@ export default function App() {
         <Route element={<Private><AppShell /></Private>}>
           <Route path="/painel" element={<Dashboard />} />
           <Route path="/veiculos" element={<Vehicles />} />
-          <Route path="/veiculos/:vehicleId/editar" element={<ComingSoon />} />
+          <Route path="/veiculos/novo" element={<AddVehicle />} />
+          <Route path="/veiculos/:vehicleId" element={<VehicleDetail />} />
+          <Route path="/veiculos/:vehicleId/editar" element={<EditVehicle />} />
           <Route path="/conta" element={<Account />} />
           {/* Páginas do Figma ainda por fazer */}
-          {['/veiculos/novo', '/monitorizacao', '/manutencao', '/custos', '/lembretes', '/inspecao', '/ajuda'].map((path) => (
+          {['/monitorizacao', '/manutencao', '/custos', '/lembretes', '/inspecao', '/ajuda'].map((path) => (
             <Route key={path} path={path} element={<ComingSoon />} />
           ))}
         </Route>
