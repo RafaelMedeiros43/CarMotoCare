@@ -20,3 +20,5 @@
   manutenção da peça, o pagamento de IUC/seguro ou a inspeção.
 - **R10** Apagar um veículo apaga em cascata tudo o que lhe pertence (peças, manutenções, inspeções, prazos,
   alertas, dispositivo OBD e leituras).
+- **R11** O e-mail da conta é único sem distinguir maiúsculas de minúsculas: guarda-se em minúsculas e sem
+  espaços nas pontas, e compara-se sempre assim (criar conta, entrar e alterar o e-mail).

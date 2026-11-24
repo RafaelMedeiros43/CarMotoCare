@@ -214,6 +214,7 @@ components:
           type: string
           format: password
           minLength: 8
+          maxLength: 72
       required:
       - name
       - email
@@ -279,6 +280,7 @@ components:
           type: string
           format: password
           minLength: 8
+          maxLength: 72
         currentPassword:
           type: string
           format: password
