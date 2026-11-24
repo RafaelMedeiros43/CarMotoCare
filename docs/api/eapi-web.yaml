@@ -114,7 +114,7 @@ paths:
       - Conta
       summary: Alterar nome, e-mail e palavra-passe
       operationId: updateMe
-      description: Para mudar e-mail ou palavra-passe exige a palavra-passe atual. O e-mail é único.
+      description: Para mudar e-mail ou palavra-passe exige a palavra-passe atual. O e-mail é único. Se a palavra-passe atual estiver errada a resposta é 400 com errors para o campo currentPassword (e não 401, que o frontend trata como sessão expirada).
       requestBody:
         required: true
         content:
