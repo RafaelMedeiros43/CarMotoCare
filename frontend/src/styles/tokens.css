@@ -1,0 +1,24 @@
+/* Cores e medidas tiradas do mockup do Figma. Ajustar aqui muda o site todo. */
+:root {
+  --color-primary: #2563eb;
+  --color-primary-dark: #1d4ed8;
+  --color-primary-soft: #eff4ff;   /* fundo dos ícones */
+  --color-navy: #101e35;           /* secções escuras, rodapé, títulos */
+  --color-ink: #17233b;            /* títulos */
+  --color-text: #64748b;           /* texto corrente */
+  --color-text-strong: #334155;
+  --color-bg: #ffffff;
+  --color-bg-hero: #eaf1ff;
+  --color-bg-alt: #f4f6fa;         /* fundo das secções */
+  --color-border: #e2e8f0;
+  --color-ok: #15803d;
+  --color-ok-bg: #e8f5ee;
+  --color-warn: #b45309;
+  --color-danger: #dc2626;
+
+  --font-sans: 'Inter', system-ui, 'Segoe UI', Roboto, sans-serif;
+  --radius: 8px;
+  --radius-lg: 16px;
+  --shadow: 0 24px 48px -20px rgba(16, 30, 53, 0.35);
+  --container: 1280px;
+}
