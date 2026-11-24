@@ -1,0 +1,18 @@
+# Build context for the root (used by infra/nginx/Dockerfile).
+# Host dependencies and build output must not reach the image:
+# node_modules from Windows breaks `npm run build` inside Linux.
+**/node_modules
+**/vendor
+frontend/dist
+
+# Secrets and local files
+**/.env
+**/.env.*
+!**/.env.example
+
+# Not needed by any image
+.git
+**/.git
+docs
+obd-simulator
+**/*.log
