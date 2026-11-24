@@ -19,6 +19,10 @@ return [
         'url' => env('SAPI_USERS_URL', 'http://sapi-users:8082'),
     ],
 
+    'sapi_vehicles' => [
+        'url' => env('SAPI_VEHICLES_URL', 'http://sapi-vehicles:8081'),
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],
