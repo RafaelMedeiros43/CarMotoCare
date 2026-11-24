@@ -14,6 +14,11 @@ return [
     |
     */
 
+    // System APIs called by this EAPI (internal network, never exposed).
+    'sapi_users' => [
+        'url' => env('SAPI_USERS_URL', 'http://sapi-users:8082'),
+    ],
+
     'postmark' => [
         'key' => env('POSTMARK_API_KEY'),
     ],

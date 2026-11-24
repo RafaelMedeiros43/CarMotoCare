@@ -1,4 +1,4 @@
-# Diagrama ER (v3)
+# Diagrama ER
 
 Todas as tabelas estão no schema `public` da base `carmotocare`. `users` é da SAPI Utilizadores; as restantes
 são da SAPI Veículos. Ver [data-model.md](data-model.md), D3.
