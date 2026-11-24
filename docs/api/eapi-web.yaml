@@ -172,7 +172,8 @@ paths:
       operationId: createVehicle
       description: Cria o veículo e o plano de peças por defeito (SAPI `POST /vehicles`) e, para cada data indicada
         (`iucValidUntil`, `insuranceValidUntil`, `inspectionValidUntil`), cria o prazo pendente (SAPI `POST /deadlines`).
-        PENDENTE: enquanto os prazos não estiverem implementados na SAPI, a EAPI valida estas datas mas não as guarda.
+        Os dois passos não são uma transação: se um prazo falhar, a EAPI apaga o veículo acabado de criar e devolve
+        o erro, para não ficar um veículo a meio.
       requestBody:
         required: true
         content:
