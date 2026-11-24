@@ -1,6 +1,7 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { Link, useOutletContext } from 'react-router-dom'
 import Icon from '../components/Icons.jsx'
+import RemoveVehicleDialog from '../components/RemoveVehicleDialog.jsx'
 import useApi from '../hooks/useApi.js'
 import useMaintenanceCosts from '../hooks/useMaintenanceCosts.js'
 import { currentYear, formatEuro, formatKm, formatYearMonth } from '../lib/format.js'
@@ -50,8 +51,7 @@ function VehicleCard({ vehicle, maintenanceCost, onOpen, onRemove }) {
       </div>
 
       <div className="fleet-card__actions">
-        {/* Consultar: abre o painel com este veículo selecionado (ainda não há página de detalhe) */}
-        <Link to="/painel" className="acct-btn acct-btn--primary" onClick={() => onOpen(vehicle.id)} aria-label={`Consultar ${name}`}>
+        <Link to={`/veiculos/${vehicle.id}`} className="acct-btn acct-btn--primary" onClick={() => onOpen(vehicle.id)} aria-label={`Consultar ${name}`}>
           <Icon name="arrowRight" size={16} />
           Consultar
         </Link>
@@ -73,9 +73,6 @@ export default function Vehicles() {
 
   const [filter, setFilter] = useState('ALL') // 'ALL' ou o id de um veículo
   const [toRemove, setToRemove] = useState(null) // veículo à espera de confirmação
-  const [removing, setRemoving] = useState(false)
-  const [removeError, setRemoveError] = useState('')
-  const dialogRef = useRef(null)
 
   // Se o veículo filtrado desaparecer ( removido), volta a "Mostrar todos"
   const activeFilter = vehicles.some((v) => v.id === filter) ? filter : 'ALL'
@@ -89,31 +86,10 @@ export default function Vehicles() {
       .join(' · ')
   }, [vehicles])
 
-  
-  useEffect(() => {
-    const dialog = dialogRef.current
-    if (!dialog) return
-    if (toRemove && !dialog.open) dialog.showModal()
-    if (!toRemove && dialog.open) dialog.close()
-  }, [toRemove])
-
-  const askRemove = (vehicle) => {
-    setRemoveError('')
-    setToRemove(vehicle)
-  }
-
-  const confirmRemove = async () => {
-    setRemoving(true)
-    setRemoveError('')
-    try {
-      await api.deleteVehicle(toRemove.id)
-      await reload()
-      setToRemove(null)
-    } catch (e) {
-      setRemoveError(e.message)
-    } finally {
-      setRemoving(false)
-    }
+  const confirmRemove = async (vehicle) => {
+    await api.deleteVehicle(vehicle.id)
+    await reload()
+    setToRemove(null)
   }
 
   return (
@@ -168,7 +144,7 @@ export default function Vehicles() {
 
           <ul className="fleet-grid">
             {shown.map((v) => (
-              <VehicleCard key={v.id} vehicle={v} maintenanceCost={costs[v.id]} onOpen={selectVehicle} onRemove={askRemove} />
+              <VehicleCard key={v.id} vehicle={v} maintenanceCost={costs[v.id]} onOpen={selectVehicle} onRemove={setToRemove} />
             ))}
           </ul>
 
@@ -182,32 +158,7 @@ export default function Vehicles() {
         </>
       )}
 
-      <dialog
-        ref={dialogRef}
-        className="fleet-dialog"
-        aria-labelledby="remove-title"
-        onClose={() => setToRemove(null)}
-        onCancel={(e) => removing && e.preventDefault()}
-      >
-        {toRemove && (
-          <div className="fleet-dialog__body">
-            <h2 id="remove-title">Remover {toRemove.brand} {toRemove.model}?</h2>
-            <p>
-              Isto apaga também as manutenções, inspeções, prazos e alertas deste veículo.
-              Não é possível desfazer.
-            </p>
-            {removeError && <div className="form-error" role="alert">{removeError}</div>}
-            <div className="fleet-dialog__actions">
-              <button type="button" className="acct-btn" onClick={() => setToRemove(null)} disabled={removing}>
-                Cancelar
-              </button>
-              <button type="button" className="acct-btn fleet-danger" onClick={confirmRemove} disabled={removing}>
-                {removing ? 'A remover…' : 'Remover veículo'}
-              </button>
-            </div>
-          </div>
-        )}
-      </dialog>
+      <RemoveVehicleDialog vehicle={toRemove} onClose={() => setToRemove(null)} onConfirm={confirmRemove} />
     </div>
   )
 }

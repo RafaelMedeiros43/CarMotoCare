@@ -100,7 +100,7 @@ export default function AppShell() {
           <nav className="app-top__crumbs" aria-label="Localização">
             <span>CarMotoCare</span>
             <Icon name="chevronRight" size={13} />
-            <strong>{TITLES[pathname] ?? 'Painel'}</strong>
+            <strong>{TITLES[pathname] ?? (pathname.startsWith('/veiculos') ? 'Veículos' : 'Painel')}</strong>
           </nav>
           <div className="app-top__tools">
             <Link to="/lembretes" className="app-top__bell" aria-label="Notificações">
