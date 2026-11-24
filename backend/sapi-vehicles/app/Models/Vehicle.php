@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Builder;
 use Illuminate\Database\Eloquent\Concerns\HasUuids;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\HasMany;
@@ -30,6 +31,12 @@ class Vehicle extends Model
         return [
             'km' => 'integer',
         ];
+    }
+
+    /** Restricts to the vehicles of a user. With no user (internal callers, e.g. microservices) it does nothing. */
+    public function scopeOwnedBy(Builder $query, ?string $userId): Builder
+    {
+        return $query->when($userId !== null, fn (Builder $q) => $q->where('user_id', $userId));
     }
 
     /**

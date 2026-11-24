@@ -1,6 +1,8 @@
 <?php
 
 use App\Http\Controllers\DeadlineController;
+use App\Http\Controllers\ExpenseController;
+use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\MeController;
 use App\Http\Controllers\TokenController;
 use App\Http\Controllers\UserController;
@@ -22,12 +24,19 @@ Route::middleware('auth.jwt')->group(function () {
     Route::post('/vehicles', [VehicleController::class, 'store']);
 
     // whereUuid: an id that is not a UUID is a 404 and never reaches the sapi-vehicles.
-    Route::whereUuid('vehicleId')->group(function () {
+    Route::whereUuid(['vehicleId', 'maintenanceId'])->group(function () {
         Route::get('/vehicles/{vehicleId}', [VehicleController::class, 'show']);
         Route::patch('/vehicles/{vehicleId}', [VehicleController::class, 'update']);
         Route::delete('/vehicles/{vehicleId}', [VehicleController::class, 'destroy']);
 
         Route::get('/vehicles/{vehicleId}/deadlines', [DeadlineController::class, 'index']);
         Route::post('/vehicles/{vehicleId}/deadlines', [DeadlineController::class, 'store']);
+
+        Route::get('/vehicles/{vehicleId}/maintenances', [MaintenanceController::class, 'index']);
+        Route::post('/vehicles/{vehicleId}/maintenances', [MaintenanceController::class, 'store']);
+        Route::get('/vehicles/{vehicleId}/maintenances/{maintenanceId}', [MaintenanceController::class, 'show']);
+        Route::patch('/vehicles/{vehicleId}/maintenances/{maintenanceId}', [MaintenanceController::class, 'update']);
+
+        Route::get('/vehicles/{vehicleId}/expenses', [ExpenseController::class, 'index']);
     });
 });
