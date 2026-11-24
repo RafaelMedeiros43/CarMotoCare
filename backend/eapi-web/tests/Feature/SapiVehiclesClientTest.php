@@ -103,6 +103,24 @@ class SapiVehiclesClientTest extends TestCase
         Http::assertSent(fn (Request $r) => $r->method() === 'DELETE' && $r->header('X-User-Id') === [self::USER_ID]);
     }
 
+    public function test_list_and_create_deadlines_use_the_deadlines_url_and_the_user_header(): void
+    {
+        $deadline = ['id' => 'd1', 'vehicleId' => self::VEHICLE_ID, 'type' => 'IUC', 'status' => 'PENDENTE', 'dueDate' => '2027-01-31'];
+        Http::fake([
+            self::URL.'/vehicles/'.self::VEHICLE_ID.'/deadlines' => Http::sequence()
+                ->push([$deadline], 200)
+                ->push($deadline, 201),
+        ]);
+        $client = new SapiVehiclesClient;
+
+        $this->assertSame([$deadline], $client->listDeadlines(self::USER_ID, self::VEHICLE_ID));
+        $this->assertSame($deadline, $client->createDeadline(self::USER_ID, self::VEHICLE_ID, ['type' => 'IUC', 'dueDate' => '2027-01-31']));
+
+        Http::assertSent(fn (Request $r) => $r->method() === 'POST'
+            && $r->data() === ['type' => 'IUC', 'dueDate' => '2027-01-31']
+            && $r->header('X-User-Id') === [self::USER_ID]);
+    }
+
     public function test_business_errors_are_rethrown_with_the_same_status_and_field_errors(): void
     {
         $errors = [['field' => 'plate', 'message' => 'Já existe um veículo com esta matrícula.']];

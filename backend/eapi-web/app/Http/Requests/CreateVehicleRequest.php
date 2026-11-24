@@ -7,7 +7,7 @@ use Illuminate\Foundation\Http\FormRequest;
 /**
  * POST /vehicles (VehicleCreate in docs/api/eapi-web.yaml).
  * The plate uniqueness is decided by the sapi-vehicles (400 on the "plate" field), not here.
- * The three validity dates are optional; for now they are validated but not used (see VehicleService::create).
+ * The three validity dates are optional; each one given becomes a pending deadline (see VehicleService::create).
  */
 class CreateVehicleRequest extends FormRequest
 {

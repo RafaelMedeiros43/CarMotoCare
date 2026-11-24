@@ -76,6 +76,27 @@ class SapiVehiclesClient
         $this->send($userId, fn (PendingRequest $http) => $http->delete($this->vehiclePath($vehicleId)));
     }
 
+    /**
+     * GET /vehicles/{vehicleId}/deadlines
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function listDeadlines(string $userId, string $vehicleId): array
+    {
+        return $this->send($userId, fn (PendingRequest $http) => $http->get($this->vehiclePath($vehicleId).'/deadlines'))->json() ?? [];
+    }
+
+    /**
+     * POST /vehicles/{vehicleId}/deadlines (409 if the type already has a pending deadline)
+     *
+     * @param  array{type: string, dueDate: string}  $data
+     * @return array<string, mixed>
+     */
+    public function createDeadline(string $userId, string $vehicleId, array $data): array
+    {
+        return $this->send($userId, fn (PendingRequest $http) => $http->post($this->vehiclePath($vehicleId).'/deadlines', $data))->json() ?? [];
+    }
+
     private function vehiclePath(string $vehicleId): string
     {
         return '/vehicles/'.rawurlencode($vehicleId);

@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\DeadlineController;
 use App\Http\Controllers\MeController;
 use App\Http\Controllers\TokenController;
 use App\Http\Controllers\UserController;
@@ -25,5 +26,8 @@ Route::middleware('auth.jwt')->group(function () {
         Route::get('/vehicles/{vehicleId}', [VehicleController::class, 'show']);
         Route::patch('/vehicles/{vehicleId}', [VehicleController::class, 'update']);
         Route::delete('/vehicles/{vehicleId}', [VehicleController::class, 'destroy']);
+
+        Route::get('/vehicles/{vehicleId}/deadlines', [DeadlineController::class, 'index']);
+        Route::post('/vehicles/{vehicleId}/deadlines', [DeadlineController::class, 'store']);
     });
 });

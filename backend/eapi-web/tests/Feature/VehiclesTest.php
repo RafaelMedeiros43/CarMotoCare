@@ -155,19 +155,84 @@ class VehiclesTest extends TestCase
             && $r->header('X-User-Id') === [self::USER_ID]);
     }
 
-    public function test_create_accepts_the_validity_dates_but_does_not_forward_them(): void
+    public function test_create_without_dates_creates_no_deadlines(): void
     {
         Http::fake([self::URL.'/vehicles' => Http::response(self::VEHICLE, 201)]);
 
-        // TODO (prazos): quando existir POST /vehicles/{id}/deadlines na sapi-vehicles, a EAPI cria aqui os prazos.
+        $this->postJson('/vehicles', self::CREATE + ['iucValidUntil' => null, 'insuranceValidUntil' => ''], $this->bearer())->assertCreated();
+
+        Http::assertSentCount(1);
+        Http::assertSent(fn (Request $r) => $r->data() === self::CREATE);
+    }
+
+    public function test_create_creates_one_pending_deadline_per_date_given(): void
+    {
+        Http::fake([
+            self::URL.'/vehicles/'.self::VEHICLE_ID.'/deadlines' => Http::response(['id' => 'x'], 201),
+            self::URL.'/vehicles' => Http::response(self::VEHICLE, 201),
+        ]);
+
         $this->postJson('/vehicles', self::CREATE + [
             'iucValidUntil' => '2027-01-31',
             'insuranceValidUntil' => '2027-02-28',
             'inspectionValidUntil' => null,
-        ], $this->bearer())->assertCreated();
+        ], $this->bearer())
+            ->assertCreated()
+            ->assertExactJson(self::VEHICLE);
 
-        Http::assertSentCount(1);
-        Http::assertSent(fn (Request $r) => $r->data() === self::CREATE);
+        // The vehicle first (without the dates), then one deadline per date, all with the user of the token.
+        Http::assertSentCount(3);
+        Http::assertSent(fn (Request $r) => $r->url() === self::URL.'/vehicles' && $r->data() === self::CREATE);
+        Http::assertSent(fn (Request $r) => str_ends_with($r->url(), '/deadlines')
+            && $r->data() === ['type' => 'IUC', 'dueDate' => '2027-01-31']
+            && $r->header('X-User-Id') === [self::USER_ID]);
+        Http::assertSent(fn (Request $r) => str_ends_with($r->url(), '/deadlines')
+            && $r->data() === ['type' => 'SEGURO', 'dueDate' => '2027-02-28']);
+    }
+
+    public function test_create_removes_the_vehicle_when_a_deadline_cannot_be_created(): void
+    {
+        Http::fake([
+            self::URL.'/vehicles/'.self::VEHICLE_ID.'/deadlines' => Http::response('boom', 500),
+            self::URL.'/vehicles/'.self::VEHICLE_ID => Http::response('', 204),
+            self::URL.'/vehicles' => Http::response(self::VEHICLE, 201),
+        ]);
+
+        // No half-created vehicle is left behind: it is deleted and the error is returned.
+        $this->postJson('/vehicles', self::CREATE + ['iucValidUntil' => '2027-01-31'], $this->bearer())
+            ->assertStatus(502)
+            ->assertHeader('Content-Type', 'application/problem+json');
+
+        Http::assertSent(fn (Request $r) => $r->method() === 'DELETE'
+            && $r->url() === self::URL.'/vehicles/'.self::VEHICLE_ID
+            && $r->header('X-User-Id') === [self::USER_ID]);
+    }
+
+    public function test_create_returns_the_original_error_even_if_removing_the_vehicle_also_fails(): void
+    {
+        Http::fake([
+            self::URL.'/vehicles/'.self::VEHICLE_ID.'/deadlines' => Http::response('boom', 500),
+            self::URL.'/vehicles/'.self::VEHICLE_ID => Http::response('boom', 500),
+            self::URL.'/vehicles' => Http::response(self::VEHICLE, 201),
+        ]);
+
+        $this->postJson('/vehicles', self::CREATE + ['iucValidUntil' => '2027-01-31'], $this->bearer())
+            ->assertStatus(502);
+    }
+
+    public function test_create_stops_at_the_first_deadline_that_fails(): void
+    {
+        Http::fake([
+            self::URL.'/vehicles/'.self::VEHICLE_ID.'/deadlines' => Http::response('boom', 500),
+            self::URL.'/vehicles/'.self::VEHICLE_ID => Http::response('', 204),
+            self::URL.'/vehicles' => Http::response(self::VEHICLE, 201),
+        ]);
+
+        $this->postJson('/vehicles', self::CREATE + ['iucValidUntil' => '2027-01-31', 'insuranceValidUntil' => '2027-02-28'], $this->bearer())
+            ->assertStatus(502);
+
+        // vehicle + first deadline + delete (the second deadline is not tried)
+        Http::assertSentCount(3);
     }
 
     public function test_create_never_forwards_a_user_id_from_the_body(): void
