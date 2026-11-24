@@ -154,6 +154,31 @@ services:
     ports:
       - "127.0.0.1:8085:8085"
 
+  # ---------- Dispositivo OBD simulado ----------
+  # Reutiliza a imagem carmotocare-laravel (PHP + Composer), mas sem o entrypoint Laravel (não há artisan nem .env.example).
+  # Não arranca com "docker compose up" (perfil "simulator"). Arrancar com:  docker compose up obd-simulator
+  obd-simulator:
+    <<: *laravel
+    profiles: ["simulator"]
+    restart: "on-failure:5"
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+    entrypoint: ["sh", "-c", "[ -f vendor/autoload.php ] || composer install --no-interaction --prefer-dist --no-dev --no-progress || exit 1; exec php simulator.php"]
+    volumes:
+      - ./obd-simulator:/app
+      - obd_simulator_vendor:/app/vendor   # dependências dentro do Docker (rápido no Windows)
+    environment:
+      DEVICE_ID: ${OBD_DEVICE_ID:-OBD-7F3A-0001}
+      MQTT_HOST: rabbitmq
+      MQTT_PORT: 1883
+      MQTT_USERNAME: ${OBD_MQTT_USERNAME:-${RABBITMQ_DEFAULT_USER}}   # em produção: um utilizador por dispositivo
+      MQTT_PASSWORD: ${OBD_MQTT_PASSWORD:-${RABBITMQ_DEFAULT_PASS}}
+      START_KM: ${OBD_START_KM:-68420}
+      INTERVAL_S: ${OBD_INTERVAL_S:-5}
+      SPEED_FACTOR: ${OBD_SPEED_FACTOR:-1}
+      MODE: ${OBD_MODE:-normal}
+
 volumes:
   pgdata:
   rabbitdata:
@@ -163,3 +188,4 @@ volumes:
   sapi_workshops_vendor:
   ms_obd_vendor:
   ms_alerts_vendor:
+  obd_simulator_vendor:
