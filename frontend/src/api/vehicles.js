@@ -64,11 +64,12 @@ export const unpairObdDevice = (vehicleId) => request(`/vehicles/${vehicleId}/ob
 
 // ── Peças (plano de manutenção) ──
 // GET /vehicles/{id}/parts => Part[] { id, vehicleId, name, intervalKm, intervalMonths, intervalSource 'CATALOGO'|'UTILIZADOR',
-//   lastServiceKm, lastServiceDate, nextKm, nextDate, kmRemaining, daysRemaining }. (Rota ainda não existe na EAPI Web)
+//   lastServiceKm, lastServiceDate, nextKm, nextDate, kmRemaining, daysRemaining }
 export const listParts = (vehicleId) => request(`/vehicles/${vehicleId}/parts`)
 
 // PATCH /vehicles/{id}/parts/{partId} => Part. Corpo: { intervalKm?, intervalMonths?, lastServiceDate?, lastServiceKm? }
 // (null desativa um limite; pelo menos um limite ativo). Um intervalo alterado passa a origem UTILIZADOR.
+// (Rota ainda não existe na EAPI Web)
 export const updatePart = (vehicleId, partId, data) =>
   request(`/vehicles/${vehicleId}/parts/${partId}`, { method: 'PATCH', body: data })
 
