@@ -83,3 +83,9 @@ export function formatDateTime(iso) {
   const time = d.toLocaleTimeString('pt-PT', { hour: '2-digit', minute: '2-digit' })
   return `${d.getDate()} ${MONTHS_SHORT[d.getMonth()]} ${d.getFullYear()} · ${time}`
 }
+
+/** Coordenadas GPS -> "37,7417° N, 25,6710° O" */
+export function formatCoordinates({ latitude, longitude }) {
+  const part = (value, pos, neg) => `${Math.abs(value).toLocaleString('pt-PT', { minimumFractionDigits: 4, maximumFractionDigits: 4 })}° ${value >= 0 ? pos : neg}`
+  return `${part(latitude, 'N', 'S')}, ${part(longitude, 'E', 'O')}`
+}

@@ -20,12 +20,30 @@ TITLES['/veiculos/novo'] = 'Adicionar veículo'
 TITLES['/conta'] = 'Conta'
 TITLES['/ajuda'] = 'Como utilizar'
 
+// Páginas que pertencem a uma área do menu (ex.: Monitorização > Emparelhar dispositivo; Manutenção > Peças e intervalos > Editar intervalo)
+const SUBPAGES = {
+  '/dispositivo': { area: '/monitorizacao', current: 'Dispositivo OBD' },
+  '/dispositivo/emparelhar': { area: '/monitorizacao', current: 'Emparelhar dispositivo' },
+  '/localizacao': { area: '/monitorizacao', current: 'Localização' },
+  '/oficinas': { area: '/manutencao', current: 'Oficinas próximas' },
+}
+const EDIT_INTERVAL = /^\/manutencao\/pecas\/[^/]+$/
+const subpageOf = (pathname) => {
+  if (SUBPAGES[pathname]) return { ...SUBPAGES[pathname], trail: [] }
+  if (EDIT_INTERVAL.test(pathname)) {
+    return { area: '/manutencao', trail: [{ to: '/manutencao/pecas', label: 'Peças e intervalos' }], current: 'Editar intervalo' }
+  }
+  return null
+}
+const areaOf = (pathname) => subpageOf(pathname)?.area
+
 const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`
 
 /** Estrutura das páginas com sessão iniciada: menu lateral + barra superior (Figma "04 Painel") */
 export default function AppShell() {
   const { user, logout, isMock } = useAuth()
   const { pathname } = useLocation()
+  const subpage = subpageOf(pathname)
   const navigate = useNavigate()
   const garage = useGarage()
   const { vehicles, alerts } = garage
@@ -63,7 +81,7 @@ export default function AppShell() {
 
         <nav className="app-side__nav" aria-label="Áreas">
           {NAV.map((item) => (
-            <NavLink key={item.to} to={item.to} className={({ isActive }) => `app-side__link${isActive ? ' is-active' : ''}`}>
+            <NavLink key={item.to} to={item.to} className={({ isActive }) => `app-side__link${isActive || areaOf(pathname) === item.to ? ' is-active' : ''}`}>
               <Icon name={item.icon} size={18} />
               {item.label}
             </NavLink>
@@ -100,7 +118,21 @@ export default function AppShell() {
           <nav className="app-top__crumbs" aria-label="Localização">
             <span>CarMotoCare</span>
             <Icon name="chevronRight" size={13} />
-            <strong>{TITLES[pathname] ?? (pathname.startsWith('/veiculos') ? 'Veículos' : 'Painel')}</strong>
+            {subpage ? (
+              <>
+                <Link to={subpage.area}>{TITLES[subpage.area]}</Link>
+                {subpage.trail.map((c) => (
+                  <span key={c.to} className="app-top__crumb">
+                    <Icon name="chevronRight" size={13} />
+                    <Link to={c.to}>{c.label}</Link>
+                  </span>
+                ))}
+                <Icon name="chevronRight" size={13} />
+                <strong>{subpage.current}</strong>
+              </>
+            ) : (
+              <strong>{TITLES[pathname] ?? (pathname.startsWith('/veiculos') ? 'Veículos' : pathname.startsWith('/manutencao') ? 'Manutenção' : pathname.startsWith('/custos') ? 'Custos' : 'Painel')}</strong>
+            )}
           </nav>
           <div className="app-top__tools">
             <Link to="/lembretes" className="app-top__bell" aria-label="Notificações">

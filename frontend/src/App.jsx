@@ -11,6 +11,17 @@ import Vehicles from './pages/Vehicles.jsx'
 import AddVehicle from './pages/AddVehicle.jsx'
 import VehicleDetail from './pages/VehicleDetail.jsx'
 import EditVehicle from './pages/EditVehicle.jsx'
+import Monitoring from './pages/Monitoring.jsx'
+import ObdDevice from './pages/ObdDevice.jsx'
+import PairObd from './pages/PairObd.jsx'
+import Location from './pages/Location.jsx'
+import Maintenance from './pages/Maintenance.jsx'
+import PartsPlan from './pages/PartsPlan.jsx'
+import RegisterMaintenance from './pages/RegisterMaintenance.jsx'
+import EditInterval from './pages/EditInterval.jsx'
+import Workshops from './pages/Workshops.jsx'
+import Costs from './pages/Costs.jsx'
+import RegisterCost from './pages/RegisterCost.jsx'
 import ComingSoon from './pages/ComingSoon.jsx'
 import Account from './pages/Account.jsx'
 import { useAuth } from './context/AuthContext.jsx'
@@ -70,8 +81,19 @@ export default function App() {
           <Route path="/veiculos/:vehicleId" element={<VehicleDetail />} />
           <Route path="/veiculos/:vehicleId/editar" element={<EditVehicle />} />
           <Route path="/conta" element={<Account />} />
+          <Route path="/monitorizacao" element={<Monitoring />} />
+          <Route path="/dispositivo" element={<ObdDevice />} />
+          <Route path="/dispositivo/emparelhar" element={<PairObd />} />
+          <Route path="/localizacao" element={<Location />} />
           {/* Páginas do Figma ainda por fazer */}
-          {['/monitorizacao', '/manutencao', '/custos', '/lembretes', '/inspecao', '/ajuda'].map((path) => (
+          <Route path="/manutencao" element={<Maintenance />} />
+          <Route path="/manutencao/pecas" element={<PartsPlan />} />
+          <Route path="/manutencao/pecas/:partId" element={<EditInterval />} />
+          <Route path="/manutencao/nova" element={<RegisterMaintenance />} />
+          <Route path="/oficinas" element={<Workshops />} />
+          <Route path="/custos" element={<Costs />} />
+          <Route path="/custos/registar" element={<RegisterCost />} />
+          {['/lembretes', '/inspecao', '/ajuda'].map((path) => (
             <Route key={path} path={path} element={<ComingSoon />} />
           ))}
         </Route>
