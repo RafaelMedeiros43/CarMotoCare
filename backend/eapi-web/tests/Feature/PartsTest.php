@@ -7,7 +7,10 @@ use Illuminate\Http\Client\Request;
 use Illuminate\Support\Facades\Http;
 use Tests\TestCase;
 
-/** Peças na EAPI (docs/api/eapi-web.yaml): GET /vehicles/{vehicleId}/parts. A sapi-vehicles é simulada. */
+/**
+ * Peças na EAPI (docs/api/eapi-web.yaml): GET /vehicles/{vehicleId}/parts e PATCH /vehicles/{vehicleId}/parts/{partId}.
+ * A sapi-vehicles é simulada.
+ */
 class PartsTest extends TestCase
 {
     private const URL = 'http://sapi-vehicles.test';
@@ -139,5 +142,185 @@ class PartsTest extends TestCase
         Http::fake([self::URL.$this->path() => Http::failedConnection()]);
 
         $this->getJson($this->path(), $this->bearer())->assertStatus(502);
+    }
+
+    // ---------- PATCH /vehicles/{vehicleId}/parts/{partId} ----------
+
+    private function partPath(): string
+    {
+        return $this->path().'/'.self::PART['id'];
+    }
+
+    private function fakeUpdate(): void
+    {
+        Http::fake([self::URL.$this->partPath() => Http::response(self::PART, 200)]);
+    }
+
+    public function test_update_requires_a_valid_token(): void
+    {
+        Http::fake();
+        $body = ['intervalKm' => 15000];
+
+        $this->patchJson($this->partPath(), $body)->assertUnauthorized();
+        $this->patchJson($this->partPath(), $body, ['Authorization' => 'Bearer not-a-token'])->assertUnauthorized();
+
+        Http::assertNothingSent();
+    }
+
+    public function test_update_forwards_the_changes_with_the_user_of_the_token_and_returns_the_part(): void
+    {
+        Http::fake([self::URL.$this->partPath() => Http::response(self::PART + ['secret' => 'x'], 200)]);
+        $body = ['intervalKm' => 10000, 'intervalMonths' => 12, 'lastServiceDate' => '2026-06-10', 'lastServiceKm' => 55000];
+
+        $this->patchJson($this->partPath(), $body, $this->bearer() + ['X-User-Id' => '11111111-1111-4111-8111-111111111111'])
+            ->assertOk()
+            ->assertExactJson(self::PART);
+
+        Http::assertSentCount(1);
+        Http::assertSent(fn (Request $r) => $r->method() === 'PATCH'
+            && $r->url() === self::URL.$this->partPath()
+            && $r->header('X-User-Id') === [self::USER_ID]
+            && $r->data() == $body);
+    }
+
+    public function test_update_forwards_null_to_disable_a_limit_and_nothing_that_was_not_sent(): void
+    {
+        $this->fakeUpdate();
+
+        $this->patchJson($this->partPath(), ['intervalKm' => null], $this->bearer())->assertOk();
+
+        Http::assertSent(fn (Request $r) => $r->data() === ['intervalKm' => null]);
+    }
+
+    public function test_update_forwards_only_the_contract_fields(): void
+    {
+        $this->fakeUpdate();
+
+        $this->patchJson($this->partPath(), [
+            'intervalKm' => 12000,
+            'name' => 'Outra peça',
+            'intervalSource' => 'CATALOGO',
+            'vehicleId' => self::VEHICLE_ID,
+        ], $this->bearer())->assertOk();
+
+        Http::assertSent(fn (Request $r) => $r->data() === ['intervalKm' => 12000]);
+    }
+
+    public function test_update_accepts_the_extreme_values(): void
+    {
+        $this->fakeUpdate();
+
+        $this->patchJson($this->partPath(), [
+            'intervalKm' => 1,
+            'intervalMonths' => 999,
+            'lastServiceDate' => now()->toDateString(),
+            'lastServiceKm' => 0,
+        ], $this->bearer())->assertOk();
+
+        Http::assertSentCount(1);
+    }
+
+    public function test_update_without_any_field_to_change_is_400_without_calling_the_sapi(): void
+    {
+        Http::fake();
+
+        foreach ([[], ['name' => 'Outra peça']] as $body) {
+            $this->patchJson($this->partPath(), $body, $this->bearer())
+                ->assertStatus(400)
+                ->assertHeader('Content-Type', 'application/problem+json')
+                ->assertJsonPath('errors.0.field', 'body');
+        }
+
+        Http::assertNothingSent();
+    }
+
+    public function test_update_rejects_invalid_values_without_calling_the_sapi(): void
+    {
+        Http::fake();
+
+        $cases = [
+            ['intervalKm', 0],
+            ['intervalKm', -1],
+            ['intervalKm', 1.5],
+            ['intervalKm', 'dez mil'],
+            ['intervalKm', 2147483648],
+            ['intervalMonths', 0],
+            ['intervalMonths', 1000],
+            ['intervalMonths', 1.5],
+            ['lastServiceKm', -1],
+            ['lastServiceKm', null],
+            ['lastServiceKm', 2147483648],
+            ['lastServiceDate', now()->addDay()->toDateString()],
+            ['lastServiceDate', '10-06-2026'],
+            ['lastServiceDate', '2026-02-30'],
+            ['lastServiceDate', null],
+        ];
+
+        foreach ($cases as [$field, $value]) {
+            $response = $this->patchJson($this->partPath(), [$field => $value], $this->bearer());
+
+            $this->assertSame(
+                [400, $field],
+                [$response->status(), $response->json('errors.0.field')],
+                "{$field} = ".var_export($value, true),
+            );
+        }
+
+        Http::assertNothingSent();
+    }
+
+    /** The rules that need the data (km of the vehicle, one active limit) belong to the SAPI. */
+    public function test_update_passes_the_field_errors_of_the_sapi(): void
+    {
+        $errors = [['field' => 'lastServiceKm', 'message' => 'Resposta da sapi-vehicles.']];
+        Http::fake([self::URL.$this->partPath() => Http::response([
+            'type' => 'about:blank', 'title' => 'Pedido inválido', 'status' => 400, 'errors' => $errors,
+        ], 400)]);
+
+        $this->patchJson($this->partPath(), ['lastServiceKm' => 999999], $this->bearer())
+            ->assertStatus(400)
+            ->assertHeader('Content-Type', 'application/problem+json')
+            ->assertJsonPath('errors', $errors);
+    }
+
+    public function test_update_passes_the_404_of_the_sapi(): void
+    {
+        Http::fake([self::URL.$this->partPath() => Http::response([
+            'type' => 'about:blank', 'title' => 'Não encontrado', 'status' => 404, 'detail' => 'Resposta da sapi-vehicles.',
+        ], 404)]);
+
+        $this->patchJson($this->partPath(), ['intervalKm' => 15000], $this->bearer())
+            ->assertNotFound()
+            ->assertJsonPath('detail', 'Resposta da sapi-vehicles.');
+    }
+
+    public function test_update_of_an_id_that_is_not_a_uuid_is_404_without_calling_the_sapi(): void
+    {
+        $this->fakeUpdate();
+        $body = ['intervalKm' => 15000];
+
+        // Valid ids work: so the 404s below do not come from the route being missing.
+        $this->patchJson($this->partPath(), $body, $this->bearer())->assertOk();
+
+        $this->patchJson($this->path().'/not-a-uuid', $body, $this->bearer())->assertNotFound();
+        $this->patchJson('/vehicles/not-a-uuid/parts/'.self::PART['id'], $body, $this->bearer())->assertNotFound();
+
+        Http::assertSentCount(1);
+    }
+
+    public function test_update_with_a_sapi_error_returns_502_and_hides_the_details(): void
+    {
+        Http::fake([self::URL.$this->partPath() => Http::response('SQLSTATE secret', 500)]);
+
+        $response = $this->patchJson($this->partPath(), ['intervalKm' => 15000], $this->bearer())->assertStatus(502);
+
+        $this->assertStringNotContainsString('SQLSTATE', $response->getContent());
+    }
+
+    public function test_update_with_the_sapi_unreachable_returns_502(): void
+    {
+        Http::fake([self::URL.$this->partPath() => Http::failedConnection()]);
+
+        $this->patchJson($this->partPath(), ['intervalKm' => 15000], $this->bearer())->assertStatus(502);
     }
 }

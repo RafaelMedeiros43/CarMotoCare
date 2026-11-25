@@ -17,4 +17,13 @@ class PartService
     {
         return $this->vehicles->listParts($userId, $vehicleId);
     }
+
+    /**
+     * @param  array{intervalKm?: ?int, intervalMonths?: ?int, lastServiceDate?: string, lastServiceKm?: int}  $data
+     * @return array<string, mixed>
+     */
+    public function update(string $userId, string $vehicleId, string $partId, array $data): array
+    {
+        return $this->vehicles->updatePart($userId, $vehicleId, $partId, $data);
+    }
 }

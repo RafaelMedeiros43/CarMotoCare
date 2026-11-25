@@ -306,7 +306,7 @@ paths:
       summary: Alterar intervalo ou referência
       operationId: updatePart
       description: Pelo menos um limite (km ou meses) tem de ficar ativo. `lastServiceKm` não pode ser superior
-        à km atual.
+        à km atual e `lastServiceDate` não pode ser no futuro.
       parameters:
       - $ref: '#/components/parameters/VehicleId'
       - $ref: '#/components/parameters/UserIdOptional'
@@ -1609,12 +1609,14 @@ components:
         intervalMonths:
           type: integer
           minimum: 1
+          maximum: 999
           description: Nulo desativa o limite por tempo.
           nullable: true
         lastServiceDate:
           type: string
           format: date
           example: '2026-11-24'
+          description: Não pode ser no futuro.
         lastServiceKm:
           type: integer
           minimum: 0
@@ -1622,7 +1624,8 @@ components:
           description: Não pode ser superior à km atual do veículo.
       minProperties: 1
       description: Altera o intervalo (km e/ou meses; pelo menos um limite ativo) e/ou a referência (data e km do
-        último serviço). Um intervalo alterado passa a origem UTILIZADOR.
+        último serviço). A origem passa a UTILIZADOR só se um intervalo ficar diferente do atual; enviar o mesmo
+        valor ou mudar apenas a referência mantém a origem.
     Alert:
       type: object
       properties:

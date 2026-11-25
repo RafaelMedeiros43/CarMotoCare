@@ -159,6 +159,19 @@ class SapiVehiclesClient
         return $this->send($userId, fn (PendingRequest $http) => $http->get($this->vehiclePath($vehicleId).'/parts'))->json() ?? [];
     }
 
+    /**
+     * PATCH /vehicles/{vehicleId}/parts/{partId}
+     *
+     * @param  array{intervalKm?: ?int, intervalMonths?: ?int, lastServiceDate?: string, lastServiceKm?: int}  $data
+     * @return array<string, mixed>
+     */
+    public function updatePart(string $userId, string $vehicleId, string $partId, array $data): array
+    {
+        $path = $this->vehiclePath($vehicleId).'/parts/'.rawurlencode($partId);
+
+        return $this->send($userId, fn (PendingRequest $http) => $http->patch($path, $data))->json() ?? [];
+    }
+
     private function maintenancePath(string $vehicleId, string $maintenanceId): string
     {
         return $this->vehiclePath($vehicleId).'/maintenances/'.rawurlencode($maintenanceId);

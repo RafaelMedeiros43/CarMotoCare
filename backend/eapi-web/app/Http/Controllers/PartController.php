@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\UpdatePartRequest;
 use App\Http\Resources\PartResource;
 use App\Services\PartService;
 use Illuminate\Http\Request;
@@ -16,6 +17,14 @@ class PartController extends Controller
     {
         return PartResource::collection(
             $this->parts->listForVehicle($request->attributes->get('userId'), $vehicleId)
+        );
+    }
+
+    /** PATCH /vehicles/{vehicleId}/parts/{partId} */
+    public function update(UpdatePartRequest $request, string $vehicleId, string $partId): PartResource
+    {
+        return new PartResource(
+            $this->parts->update($request->attributes->get('userId'), $vehicleId, $partId, $request->validated())
         );
     }
 }

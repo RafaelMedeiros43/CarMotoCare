@@ -237,7 +237,8 @@ Alert.userId   = vehicles.user_id do veículo do alerta (junção; não se guard
 Regra: todas as peças com intervalo de 10 000 km e sem intervalo em meses (interval_months = NULL),
 origem CATALOGO. Ao criar o veículo, last_service_km = km indicada e last_service_date = data de criação
 (sem isto, um carro criado com 68 000 km teria todas as peças vencidas e alertas logo no primeiro minuto).
-O utilizador ajusta depois em PATCH /parts/{id} (passa a origem UTILIZADOR).
+O utilizador ajusta depois em PATCH /vehicles/{vehicleId}/parts/{partId} (se um intervalo ficar diferente,
+a origem passa a UTILIZADOR).
 
 CARRO (7 peças)
   - Óleo e filtro de óleo
