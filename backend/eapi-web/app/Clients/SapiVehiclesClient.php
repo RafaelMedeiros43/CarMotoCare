@@ -149,6 +149,16 @@ class SapiVehiclesClient
         return $this->send($userId, fn (PendingRequest $http) => $http->get($this->vehiclePath($vehicleId).'/expenses'))->json() ?? [];
     }
 
+    /**
+     * GET /vehicles/{vehicleId}/parts
+     *
+     * @return array<int, array<string, mixed>>
+     */
+    public function listParts(string $userId, string $vehicleId): array
+    {
+        return $this->send($userId, fn (PendingRequest $http) => $http->get($this->vehiclePath($vehicleId).'/parts'))->json() ?? [];
+    }
+
     private function maintenancePath(string $vehicleId, string $maintenanceId): string
     {
         return $this->vehiclePath($vehicleId).'/maintenances/'.rawurlencode($maintenanceId);

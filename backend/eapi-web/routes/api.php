@@ -4,6 +4,7 @@ use App\Http\Controllers\DeadlineController;
 use App\Http\Controllers\ExpenseController;
 use App\Http\Controllers\MaintenanceController;
 use App\Http\Controllers\MeController;
+use App\Http\Controllers\PartController;
 use App\Http\Controllers\TokenController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\VehicleController;
@@ -38,5 +39,7 @@ Route::middleware('auth.jwt')->group(function () {
         Route::patch('/vehicles/{vehicleId}/maintenances/{maintenanceId}', [MaintenanceController::class, 'update']);
 
         Route::get('/vehicles/{vehicleId}/expenses', [ExpenseController::class, 'index']);
+
+        Route::get('/vehicles/{vehicleId}/parts', [PartController::class, 'index']);
     });
 });
