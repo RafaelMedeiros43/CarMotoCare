@@ -50,22 +50,19 @@ class Vehicle extends Model
         $next = null;
 
         foreach ($this->parts as $part) {
-            if ($part->interval_km === null) {
+            $kmRemaining = $part->kmRemaining($this->km);
+
+            if ($kmRemaining === null) {
                 continue;
             }
-
-            $targetKm = $part->last_service_km + $part->interval_km;
-            $kmRemaining = $targetKm - $this->km;
 
             if ($next === null || $kmRemaining < $next['kmRemaining']) {
                 $next = [
                     'partId' => $part->id,
                     'partName' => $part->name,
-                    'targetKm' => $targetKm,
+                    'targetKm' => $part->nextKm(),
                     'kmRemaining' => $kmRemaining,
-                    'dueDate' => $part->interval_months === null
-                        ? null
-                        : $part->last_service_date->copy()->addMonthsNoOverflow($part->interval_months)->toDateString(),
+                    'dueDate' => $part->nextDate()?->toDateString(),
                 ];
             }
         }
