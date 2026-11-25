@@ -48,7 +48,8 @@ V5  Salto de km plausível: aumento <= 250 km/h × tempo desde a leitura anterio
 Depois de validada:
   1. POST /vehicles/{vehicleId}/readings (guarda a leitura, mesmo que a km não tenha subido).
   2. Se km não for null e for maior que a km do veículo: PUT /vehicles/{vehicleId}/mileage.
-     Se a km for igual ou menor (409), não publica estado (R3: leitura inferior é ignorada para a km).
+     Se a km for igual ou menor, não publica estado (R3: leitura inferior é ignorada para a km). Se a SAPI
+     receber uma km inferior à atual responde 409; uma km igual responde 200 sem alterar nada.
   3. Se a km subiu: publica app/vehicle/state.
 
 == 4. app/vehicle/state ==

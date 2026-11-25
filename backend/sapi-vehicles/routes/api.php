@@ -17,6 +17,8 @@ Route::whereUuid(['vehicleId', 'maintenanceId', 'partId'])->group(function () {
     Route::get('/vehicles/{vehicleId}', [VehicleController::class, 'show']);
     Route::patch('/vehicles/{vehicleId}', [VehicleController::class, 'update']);
     Route::delete('/vehicles/{vehicleId}', [VehicleController::class, 'destroy']);
+    // Only for the OBD microservice: the eapi-web does not expose it (the km is never typed by hand).
+    Route::put('/vehicles/{vehicleId}/mileage', [VehicleController::class, 'updateMileage']);
 
     Route::get('/vehicles/{vehicleId}/deadlines', [DeadlineController::class, 'index']);
     Route::post('/vehicles/{vehicleId}/deadlines', [DeadlineController::class, 'store']);

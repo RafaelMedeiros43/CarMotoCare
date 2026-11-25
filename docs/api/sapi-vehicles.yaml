@@ -154,9 +154,10 @@ paths:
       summary: Atualizar a quilometragem
       operationId: updateMileage
       description: Usado só pelo Microserviço OBD; não há inserção manual (não existe na EAPI Web). 409 se a nova
-        km for inferior à atual (o microserviço só atualiza se subiu). A resposta traz `nextAlertKm`, que o microserviço
-        põe no tópico `app/vehicle/state`; assim o Microserviço Manutenção e Alertas recebe sempre o plano atualizado
-        sem consultar a SAPI a cada leitura.
+        km for inferior à atual (o microserviço só atualiza se subiu). Uma km igual à atual responde 200 sem alterar
+        nada (`previousKm` igual a `km`), para o pedido poder ser repetido. A resposta traz `nextAlertKm`, que o
+        microserviço põe no tópico `app/vehicle/state`; assim o Microserviço Manutenção e Alertas recebe sempre o
+        plano atualizado sem consultar a SAPI a cada leitura.
       parameters:
       - $ref: '#/components/parameters/VehicleId'
       - $ref: '#/components/parameters/UserIdOptional'
