@@ -24,10 +24,16 @@ function inDays(n) {
   return `em atraso há ${plural(-n, 'dia', 'dias')}`
 }
 
-/** Texto do atalho "Lembretes": o alerta aberto com data mais próxima, ou o número de alertas abertos */
-function remindersText(alerts, openAlerts) {
-  const dated = alerts.filter((a) => a.dueDate).sort((a, b) => a.dueDate.localeCompare(b.dueDate))
-  if (dated.length) return `${ALERT_LABEL[dated[0].type] ?? dated[0].title} ${inDays(daysUntil(dated[0].dueDate))}`
+/**
+ * Texto do atalho "Lembretes": o prazo mais próximo entre os alertas abertos (GET /alerts) e os prazos
+ * pendentes (GET /vehicles/{id}/deadlines); sem datas, o número de alertas abertos.
+ */
+function remindersText(alerts, deadlines, openAlerts) {
+  const dated = [
+    ...alerts.filter((a) => a.dueDate).map((a) => ({ type: a.type, dueDate: a.dueDate, label: a.title })),
+    ...deadlines.filter((d) => d.status === 'PENDENTE').map((d) => ({ type: d.type, dueDate: d.dueDate })),
+  ].sort((a, b) => a.dueDate.localeCompare(b.dueDate))
+  if (dated.length) return `${ALERT_LABEL[dated[0].type] ?? dated[0].label} ${inDays(daysUntil(dated[0].dueDate))}`
   if (openAlerts > 0) return plural(openAlerts, 'alerta aberto', 'alertas abertos')
   return null
 }
@@ -35,7 +41,7 @@ function remindersText(alerts, openAlerts) {
 function Detail({ vehicle, alerts, selectVehicle, reload }) {
   const api = useApi()
   const navigate = useNavigate()
-  const { maintenances, expenses, obdState } = useVehicleDetail(vehicle.id)
+  const { maintenances, expenses, obdState, deadlines } = useVehicleDetail(vehicle.id)
   const [removing, setRemoving] = useState(false)
 
   const isMoto = vehicle.type === 'MOTO'
@@ -48,6 +54,7 @@ function Detail({ vehicle, alerts, selectVehicle, reload }) {
   const allTotal = expenses.reduce((sum, e) => sum + Number(e.amount), 0)
   const reminders = remindersText(
     alerts.filter((a) => a.vehicleId === vehicle.id && a.status === 'ABERTO'),
+    deadlines,
     vehicle.openAlerts,
   )
 
