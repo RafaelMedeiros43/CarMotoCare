@@ -13,7 +13,7 @@ Route::get('/vehicles', [VehicleController::class, 'index']);
 Route::post('/vehicles', [VehicleController::class, 'store']);
 
 // whereUuid: an id that is not a UUID is a 404, not a database error.
-Route::whereUuid(['vehicleId', 'maintenanceId'])->group(function () {
+Route::whereUuid(['vehicleId', 'maintenanceId', 'partId'])->group(function () {
     Route::get('/vehicles/{vehicleId}', [VehicleController::class, 'show']);
     Route::patch('/vehicles/{vehicleId}', [VehicleController::class, 'update']);
     Route::delete('/vehicles/{vehicleId}', [VehicleController::class, 'destroy']);
@@ -29,6 +29,7 @@ Route::whereUuid(['vehicleId', 'maintenanceId'])->group(function () {
     Route::get('/vehicles/{vehicleId}/expenses', [ExpenseController::class, 'index']);
 
     Route::get('/vehicles/{vehicleId}/parts', [PartController::class, 'index']);
+    Route::patch('/vehicles/{vehicleId}/parts/{partId}', [PartController::class, 'update']);
 });
 
 // Pending deadlines of every vehicle (for the alerts microservice; no X-User-Id).
