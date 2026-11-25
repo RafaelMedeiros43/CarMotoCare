@@ -70,6 +70,21 @@ class Vehicle extends Model
         return $next;
     }
 
+    /**
+     * Lowest nextKm among the parts with a km interval and no open alert (nextAlertKm in the contract;
+     * docs/data/data-model.md, section 4). It is below the current km when that part is overdue. Null if there
+     * is none. Always queries the database, so it sees the alerts as they are now.
+     */
+    public function nextAlertKm(): ?int
+    {
+        return $this->parts()
+            ->whereNotNull('interval_km')
+            ->whereDoesntHave('alerts', fn (Builder $q) => $q->where('status', 'ABERTO'))
+            ->get()
+            ->map(fn (Part $part) => $part->nextKm())
+            ->min();
+    }
+
     public function parts(): HasMany
     {
         return $this->hasMany(Part::class);

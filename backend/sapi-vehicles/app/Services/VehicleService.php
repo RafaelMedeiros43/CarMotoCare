@@ -94,6 +94,36 @@ class VehicleService
         return $this->withDerivedData($vehicle);
     }
 
+    /**
+     * New km read by the OBD device. The km never goes down (R3, 409); the same km changes nothing.
+     * The row is locked until the end of the transaction, so two simultaneous requests cannot both read the old
+     * km and leave the lower value saved.
+     *
+     * @param  ?string  $userId  if given, the vehicle must belong to this user (otherwise 404)
+     * @return array{vehicleId: string, km: int, previousKm: int, nextAlertKm: ?int}
+     */
+    public function updateMileage(string $vehicleId, ?string $userId, int $km): array
+    {
+        return DB::transaction(function () use ($vehicleId, $userId, $km) {
+            $vehicle = Vehicle::query()->ownedBy($userId)->lockForUpdate()->findOrFail($vehicleId);
+            $previousKm = $vehicle->km;
+
+            if ($km < $previousKm) {
+                throw new ProblemException(409, 'Conflito', "A quilometragem não pode diminuir: a atual é {$previousKm} km.");
+            }
+
+            // With the same km the model is not dirty, so nothing is written.
+            $vehicle->update(['km' => $km]);
+
+            return [
+                'vehicleId' => $vehicle->id,
+                'km' => $vehicle->km,
+                'previousKm' => $previousKm,
+                'nextAlertKm' => $vehicle->nextAlertKm(),
+            ];
+        });
+    }
+
     /** Everything that belongs to the vehicle is deleted by the database (R10). */
     public function delete(string $vehicleId, ?string $userId = null): void
     {

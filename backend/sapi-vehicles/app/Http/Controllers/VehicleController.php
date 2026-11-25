@@ -5,7 +5,9 @@ namespace App\Http\Controllers;
 use App\Http\Requests\CreateVehicleRequest;
 use App\Http\Requests\ListVehiclesRequest;
 use App\Http\Requests\ShowVehicleRequest;
+use App\Http\Requests\UpdateMileageRequest;
 use App\Http\Requests\UpdateVehicleRequest;
+use App\Http\Resources\MileageResultResource;
 use App\Http\Resources\VehicleResource;
 use App\Services\VehicleService;
 use Illuminate\Http\JsonResponse;
@@ -48,6 +50,14 @@ class VehicleController extends Controller
     public function update(UpdateVehicleRequest $request, string $vehicleId): VehicleResource
     {
         return new VehicleResource($this->vehicles->update($vehicleId, $request->userId(), $request->validated()));
+    }
+
+    /** PUT /vehicles/{vehicleId}/mileage */
+    public function updateMileage(UpdateMileageRequest $request, string $vehicleId): MileageResultResource
+    {
+        return new MileageResultResource(
+            $this->vehicles->updateMileage($vehicleId, $request->userId(), (int) $request->validated('km'))
+        );
     }
 
     /** DELETE /vehicles/{vehicleId} */
