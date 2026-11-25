@@ -146,6 +146,32 @@ services:
       PORT: 8084
     ports:
       - "127.0.0.1:8084:8084"
+    healthcheck:
+      test: ["CMD", "php", "-r", "exit(@file_get_contents('http://localhost:8084/health') ? 0 : 1);"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 120s   # primeiro arranque: composer install dentro do contentor
+
+  # Consumidor MQTT: lê a telemetria publicada pelos dispositivos OBD (via RabbitMQ).
+  # Partilha o código e o volume vendor com o ms-obd, por isso só arranca depois de o ms-obd estar saudável.
+  ms-obd-consumer:
+    <<: *laravel
+    depends_on:
+      rabbitmq:
+        condition: service_healthy
+      ms-obd:
+        condition: service_healthy
+      sapi-vehicles:
+        condition: service_started
+    volumes:
+      - ./backend/ms-obd:/app
+      - ms_obd_vendor:/app/vendor
+    environment:
+      LOG_CHANNEL: stderr
+      MQTT_USERNAME: ${MQTT_MS_OBD_USER:-${RABBITMQ_DEFAULT_USER}}
+      MQTT_PASSWORD: ${MQTT_MS_OBD_PASSWORD:-${RABBITMQ_DEFAULT_PASS}}
+    command: ["php", "artisan", "obd:consume"]
 
   ms-alerts:
     <<: *laravel
