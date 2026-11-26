@@ -6,7 +6,9 @@ namespace App\Clients;
 
 use App\Exceptions\OverpassUnavailableException;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 final class OverpassClient
 {
@@ -25,6 +27,20 @@ final class OverpassClient
     ];
 
     /**
+     * Servidores por ordem de preferência (o overpass-api.de é o mais congestionado).
+     *
+     * @var array<int, string>
+     */
+    private const DEFAULT_ENDPOINTS = [
+        'https://overpass.private.coffee/api/interpreter',
+        'https://overpass.kumi.systems/api/interpreter',
+        'https://overpass-api.de/api/interpreter',
+    ];
+
+    /** Estados HTTP em que vale a pena tentar o servidor seguinte. */
+    private const RETRYABLE_STATUS = [429, 500, 502, 503, 504];
+
+    /**
      * Pesquisa oficinas e lojas de pneus à volta de um ponto e devolve-as já normalizadas.
      *
      * @return array<int, array{
@@ -41,38 +57,80 @@ final class OverpassClient
      */
     public function search(float $lat, float $lon, float $radiusKm): array
     {
-        $url = (string) config('services.overpass.url');
+        // Coordenadas a 2 casas (~1 km) para pesquisas próximas partilharem a cache.
+        $key = sprintf('overpass:%.2f:%.2f:%.0f', $lat, $lon, $radiusKm);
+
+        // Só guarda se a Overpass responder; se der erro, nada fica em cache.
+        return Cache::remember(
+            $key,
+            now()->addHours(24),
+            fn (): array => $this->fetch($lat, $lon, $radiusKm),
+        );
+    }
+
+    /**
+     * Faz o pedido real à Overpass API (sem cache), com fallback entre servidores.
+     *
+     * @return array<int, array<string, mixed>>
+     *
+     * @throws OverpassUnavailableException
+     */
+    private function fetch(float $lat, float $lon, float $radiusKm): array
+    {
         $timeout = max(1, (int) config('services.overpass.timeout', 10));
+        $query = $this->buildQuery($lat, $lon, $radiusKm, $timeout);
 
-        try {
-            $response = Http::asForm()
-                ->timeout($timeout)
-                ->post($url, [
-                    'data' => $this->buildQuery($lat, $lon, $radiusKm, $timeout),
-                ]);
-        } catch (ConnectionException $e) {
+        $json = null;
+        $lastError = 'sem detalhe';
+
+        foreach ($this->endpoints() as $url) {
+            try {
+                $response = Http::asForm()
+                    ->withUserAgent('CarMotoCare/1.0 (projeto academico; contacto: 2024109911@uac.pt)')
+                    ->connectTimeout(4)
+                    ->timeout($timeout + 3)
+                    ->post($url, ['data' => $query]);
+            } catch (ConnectionException) {
+                $lastError = "ligação/timeout em {$url}";
+                Log::warning('Overpass: '.$lastError);
+                continue;
+            }
+
+            if (in_array($response->status(), self::RETRYABLE_STATUS, true)) {
+                $lastError = "HTTP {$response->status()} em {$url}";
+                Log::warning('Overpass: '.$lastError);
+                continue;
+            }
+
+            if (! $response->successful()) {
+                throw new OverpassUnavailableException(
+                    sprintf('A Overpass API respondeu com o estado HTTP %d.', $response->status()),
+                );
+            }
+
+            $candidate = $response->json();
+
+            if (! is_array($candidate) || ! isset($candidate['elements']) || ! is_array($candidate['elements'])) {
+                $lastError = "resposta inválida de {$url}";
+                Log::warning('Overpass: '.$lastError);
+                continue;
+            }
+
+            if ($candidate['elements'] === [] && isset($candidate['remark']) && is_string($candidate['remark'])
+                && (str_contains($candidate['remark'], 'runtime error') || str_contains($candidate['remark'], 'timed out'))) {
+                $lastError = "pesquisa não concluída em {$url}";
+                Log::warning('Overpass: '.$lastError);
+                continue;
+            }
+
+            $json = $candidate;
+            break;
+        }
+
+        if ($json === null) {
             throw new OverpassUnavailableException(
-                'Não foi possível contactar a Overpass API (falha de ligação ou timeout).',
-                0,
-                $e,
+                'Serviço de pesquisa de oficinas temporariamente indisponível ('.$lastError.').',
             );
-        }
-
-        if (! $response->successful()) {
-            throw new OverpassUnavailableException(
-                sprintf('A Overpass API respondeu com o estado HTTP %d.', $response->status()),
-            );
-        }
-
-        $json = $response->json();
-
-        if (! is_array($json) || ! isset($json['elements']) || ! is_array($json['elements'])) {
-            throw new OverpassUnavailableException('A Overpass API devolveu uma resposta inválida.');
-        }
-
-        if ($json['elements'] === [] && isset($json['remark']) && is_string($json['remark'])
-            && (str_contains($json['remark'], 'runtime error') || str_contains($json['remark'], 'timed out'))) {
-            throw new OverpassUnavailableException('A Overpass API não conseguiu concluir a pesquisa.');
         }
 
         $workshops = [];
@@ -92,19 +150,39 @@ final class OverpassClient
         return $workshops;
     }
 
+    /**
+     * @return array<int, string>
+     */
+    private function endpoints(): array
+    {
+        $configured = config('services.overpass.urls');
+
+        if (is_array($configured) && $configured !== []) {
+            return array_values($configured);
+        }
+
+        $single = config('services.overpass.url');
+
+        return is_string($single) && $single !== ''
+            ? array_values(array_unique([$single, ...self::DEFAULT_ENDPOINTS]))
+            : self::DEFAULT_ENDPOINTS;
+    }
+
     private function buildQuery(float $lat, float $lon, float $radiusKm, int $timeout): string
     {
         $radiusMeters = (int) round($radiusKm * 1000);
         $around = sprintf('around:%d,%s,%s', $radiusMeters, $this->coordinate($lat), $this->coordinate($lon));
-        $filter = '["shop"~"^(car_repair|motorcycle_repair|tyres)$"]';
+
+        // Tags exatas (sem regex) e uma só linha `nwr` por tag.
+        $lines = [];
+        foreach (['car_repair', 'motorcycle_repair', 'tyres'] as $shop) {
+            $lines[] = sprintf('  nwr["shop"="%s"](%s);', $shop, $around);
+        }
 
         return sprintf(
-            "[out:json][timeout:%d];\n(\n  node%s(%s);\n  way%s(%s);\n);\nout center;",
+            "[out:json][timeout:%d][maxsize:16777216];\n(\n%s\n);\nout center 100;",
             $timeout,
-            $filter,
-            $around,
-            $filter,
-            $around,
+            implode("\n", $lines),
         );
     }
 
