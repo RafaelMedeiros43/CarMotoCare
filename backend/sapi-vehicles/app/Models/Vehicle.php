@@ -50,27 +50,39 @@ class Vehicle extends Model
         $next = null;
 
         foreach ($this->parts as $part) {
-            if ($part->interval_km === null) {
+            $kmRemaining = $part->kmRemaining($this->km);
+
+            if ($kmRemaining === null) {
                 continue;
             }
-
-            $targetKm = $part->last_service_km + $part->interval_km;
-            $kmRemaining = $targetKm - $this->km;
 
             if ($next === null || $kmRemaining < $next['kmRemaining']) {
                 $next = [
                     'partId' => $part->id,
                     'partName' => $part->name,
-                    'targetKm' => $targetKm,
+                    'targetKm' => $part->nextKm(),
                     'kmRemaining' => $kmRemaining,
-                    'dueDate' => $part->interval_months === null
-                        ? null
-                        : $part->last_service_date->copy()->addMonthsNoOverflow($part->interval_months)->toDateString(),
+                    'dueDate' => $part->nextDate()?->toDateString(),
                 ];
             }
         }
 
         return $next;
+    }
+
+    /**
+     * Lowest nextKm among the parts with a km interval and no open alert (nextAlertKm in the contract;
+     * docs/data/data-model.md, section 4). It is below the current km when that part is overdue. Null if there
+     * is none. Always queries the database, so it sees the alerts as they are now.
+     */
+    public function nextAlertKm(): ?int
+    {
+        return $this->parts()
+            ->whereNotNull('interval_km')
+            ->whereDoesntHave('alerts', fn (Builder $q) => $q->where('status', 'ABERTO'))
+            ->get()
+            ->map(fn (Part $part) => $part->nextKm())
+            ->min();
     }
 
     public function parts(): HasMany

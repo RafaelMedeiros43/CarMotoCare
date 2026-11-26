@@ -35,4 +35,9 @@ return [
         ],
     ],
 
+    'sapi_vehicles' => [
+        'url' => env('SAPI_VEHICLES_URL', 'http://sapi-vehicles:8081'),
+        'timeout' => (int) env('SAPI_VEHICLES_TIMEOUT_SECONDS', 5),
+    ],
+
 ];

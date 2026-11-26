@@ -17,4 +17,4 @@ ENV PHP_CLI_SERVER_WORKERS=4 \
     COMPOSER_PROCESS_TIMEOUT=1200
 
 ENTRYPOINT ["docker-entrypoint.sh"]
-CMD ["sh", "-c", "php artisan serve --host=0.0.0.0 --port=${PORT:-8000}"]
+CMD ["sh", "-c", "php artisan serve --host=0.0.0.0 --port=${PORT:-8000} --no-reload"]  
