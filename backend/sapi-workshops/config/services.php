@@ -34,5 +34,10 @@ return [
             'channel' => env('SLACK_BOT_USER_DEFAULT_CHANNEL'),
         ],
     ],
+        'overpass' => [
+        'url' => env('OVERPASS_URL', 'https://overpass.openstreetmap.fr/api/interpreter'),
+        'urls' => array_filter(explode(',', (string) env('OVERPASS_URLS', ''))),
+        'timeout' => (int) env('OVERPASS_TIMEOUT_SECONDS', 10),
+    ],
 
 ];
