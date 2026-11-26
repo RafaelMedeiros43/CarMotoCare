@@ -26,7 +26,7 @@ const pad = (n) => String(n).padStart(2, '0')
 export const isoOf = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`
 export const todayIso = () => isoOf(new Date())
 
-/** "2026-10-18" + 12 meses -> "2027-10-18" (fim de mês se o dia não existir: 31 jan + 1 mês = 28 fev) */
+/** "2026-10-18" + 12 meses -> "2027-10-18"  */
 export function addMonths(iso, months) {
   const [y, m, d] = iso.split('-').map(Number)
   const total = (y * 12 + (m - 1)) + months
@@ -53,7 +53,7 @@ export function parseEuro(text) {
 /** 63.5 -> "63,50" (para mostrar no campo) */
 export const euroInput = (n) => n.toFixed(2).replace('.', ',')
 
-// ── Peças e intervalos ──
+// Peças e intervalos
 const unit = (n, one, many) => `${n.toLocaleString('pt-PT', { useGrouping: 'always' })} ${n === 1 ? one : many}`
 export function monthsText(m) {
   return m >= 24 && m % 12 === 0 ? unit(m / 12, 'ano', 'anos') : unit(m, 'mês', 'meses')

@@ -1,0 +1,3 @@
+/* TEMPORÁRIO — botão "Seguinte" do login (modo de teste). Apagar junto com o botão. */
+.btn.dev-skip { margin-top: 10px; border: 1px dashed #d4a75a; background: #fff9ee; color: #8a5a0f; }
+.btn.dev-skip:hover { background: #fff3dc; border-color: #c08a2f; }

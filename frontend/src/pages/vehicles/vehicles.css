@@ -1,0 +1,76 @@
+/* Figma "08 Os meus veículos" (/veiculos). Reutiliza os tokens (tokens.css) e as variáveis, cartões,
+   pills e botões (.acct-btn) de app.css. Só define o que é próprio desta página. */
+
+/* Cabeçalho: o Figma usa título de 32 px */
+.fleet .dash__head h1 { font-size: 32px; }
+.fleet .dash__head p { font-size: 14px; }
+
+/* ---------- Seletor de veículo ---------- */
+.fleet-filter { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 16px; }
+.fleet-field { display: flex; flex-direction: column; gap: 8px; width: min(353px, 100%); }
+.fleet-field label { font-size: 12px; font-weight: 600; color: var(--color-ink); }
+.fleet-select { position: relative; display: block; }
+.fleet-select select {
+  appearance: none; width: 100%; height: 46px; padding: 0 40px 0 16px;
+  border: 1px solid #e1e7ef; border-radius: 8px; background: #fff;
+  font: inherit; font-size: 14px; color: var(--color-ink); cursor: pointer;
+}
+.fleet-select select:hover { border-color: #c1d3fa; }
+.fleet-select svg { position: absolute; top: 50%; right: 14px; transform: translateY(-50%); color: var(--color-text-strong); pointer-events: none; }
+.fleet-count { padding-bottom: 14px; font-size: 12px; color: var(--muted); }
+
+/* ---------- Cartões (2 colunas) ---------- */
+.fleet-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin: 0; padding: 0; list-style: none; }
+.fleet-card {
+  display: flex; flex-direction: column; gap: 22px; padding: 24px;
+  background: #fff; border: 1px solid #e1e7ef; border-radius: 14px; box-shadow: 0 1px 2px rgba(16, 30, 53, 0.04);
+}
+
+.fleet-card__top { display: flex; align-items: center; gap: 16px; }
+.fleet-card__icon { display: grid; place-items: center; width: 64px; height: 64px; border-radius: 14px; background: var(--blue-bg); color: var(--color-primary); flex-shrink: 0; }
+.fleet-card__id { flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.fleet-card__id h2 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.fleet-card__id span { font-size: 12px; color: var(--muted); }
+.fleet-card__badge { align-self: flex-start; padding: 4px 9px; border-radius: 6px; background: var(--color-bg-alt); font-size: 11px; font-weight: 500; color: var(--color-text-strong); }
+
+.fleet-card__data { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; padding-bottom: 22px; border-bottom: 1px solid var(--line); }
+.fleet-card__data > div { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; min-width: 0; }
+.fleet-card__data small { font-size: 11px; color: var(--muted); }
+.fleet-card__plate { padding: 9px 16px; border: 1px solid #e1e7ef; border-radius: 7px; background: #fff; font-size: 14px; font-weight: 600; letter-spacing: 0.06em; color: var(--color-ink); }
+.fleet-card__data strong { font-size: 28px; font-weight: 400; line-height: 1.15; letter-spacing: -0.6px; color: var(--color-ink); white-space: nowrap; }
+
+.fleet-card__summary { display: flex; flex-direction: column; gap: 6px; font-size: 12px; color: var(--muted); }
+
+.fleet-card__actions { display: flex; align-items: center; gap: 12px; margin-top: auto; }
+.fleet-remove { height: 44px; padding: 0 12px; border: 0; background: none; font-size: 13px; font-weight: 600; color: var(--color-danger); cursor: pointer; }
+.fleet-remove:hover { text-decoration: underline; }
+
+/* ---------- Nota final ---------- */
+.fleet-note { display: flex; align-items: flex-start; gap: 14px; padding: 8px 18px; }
+.fleet-note__icon { display: grid; place-items: center; width: 32px; height: 32px; border-radius: 8px; background: var(--blue-bg); color: var(--color-primary); flex-shrink: 0; }
+.fleet-note strong { display: block; margin-bottom: 4px; font-size: 13px; color: var(--color-ink); }
+.fleet-note p { font-size: 12px; color: var(--muted); }
+
+/* ---------- Erro com "Tentar novamente" ---------- */
+.fleet-retry { padding: 0; border: 0; background: none; font-weight: 600; color: inherit; text-decoration: underline; cursor: pointer; }
+
+/* ---------- Confirmação de remoção ---------- */
+.fleet-dialog { width: min(440px, calc(100% - 32px)); padding: 0; border: 0; border-radius: 14px; background: #fff; color: var(--color-text); box-shadow: var(--shadow); }
+.fleet-dialog::backdrop { background: rgba(16, 30, 53, 0.55); }
+.fleet-dialog__body { display: flex; flex-direction: column; gap: 14px; padding: 24px; }
+.fleet-dialog__body h2 { font-size: 19px; font-weight: 700; line-height: 1.3; }
+.fleet-dialog__body p { font-size: 13px; line-height: 1.55; }
+.fleet-dialog__body .form-error { margin-bottom: 0; }
+.fleet-dialog__actions { display: flex; justify-content: flex-end; gap: 12px; margin-top: 6px; }
+.fleet-dialog .fleet-danger { background: var(--color-danger); border-color: var(--color-danger); color: #fff; }
+.fleet-dialog .fleet-danger:hover { background: #b91c1c; border-color: #b91c1c; }
+
+/* O Figma deste ecrã só define o desktop */
+@media (max-width: 1000px) {
+  .fleet-grid { grid-template-columns: minmax(0, 1fr); }
+}
+@media (max-width: 420px) {
+  .fleet-card__data { grid-template-columns: minmax(0, 1fr); }
+  .fleet-card__data strong { font-size: 24px; }
+  .fleet-card__actions { flex-wrap: wrap; }
+}

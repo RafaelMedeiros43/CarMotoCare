@@ -1,0 +1,18 @@
+/* Figma "27 Inspeção — Notificações abertas" */
+.ntf { position: relative; }
+.ntf .app-top__bell { background: none; border: 0; padding: 0; cursor: pointer; }
+.ntf__panel { position: absolute; top: 44px; right: -140px; z-index: 30; width: 392px; max-width: calc(100vw - 24px); padding: 18px; border: 1px solid #e1e7ef; border-radius: 12px; background: #fff; box-shadow: 0 12px 32px rgba(16, 31, 51, 0.14); }
+.ntf__head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 14px; }
+.ntf__head h2 { font-size: 16px; font-weight: 500; }
+.ntf__head button { background: none; border: 0; padding: 0; font: inherit; font-size: 11px; font-weight: 600; color: var(--color-primary); cursor: pointer; }
+.ntf__panel ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 18px; }
+.ntf__panel li { display: flex; gap: 12px; align-items: flex-start; color: var(--muted); }
+.ntf__panel li > svg { flex: none; margin-top: 2px; }
+.ntf__panel li strong { display: block; font-size: 13px; font-weight: 400; color: var(--color-ink); }
+.ntf__panel li small { display: block; margin-top: 4px; font-size: 11px; color: var(--muted); }
+.ntf__panel li.is-warn, .ntf__panel li.is-warn strong { color: #9a5a00; }
+.ntf__panel li.is-read strong { color: var(--muted); }
+.ntf__empty { margin: 0 0 14px; font-size: 13px; color: var(--muted); }
+.ntf__all { display: block; margin-top: 18px; text-align: center; font-size: 11px; font-weight: 600; color: var(--color-primary); text-decoration: none; }
+.ntf__all:hover { text-decoration: underline; }
+@media (max-width: 600px) { .ntf__panel { right: -60px; } }

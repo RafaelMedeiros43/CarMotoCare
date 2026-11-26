@@ -6,7 +6,7 @@ export const RESULT_LABEL = { APROVADA: 'Aprovada', REPROVADA: 'Reprovada' }
 export const sum = (list, field = 'amount') => Math.round(list.reduce((t, x) => t + Number(x[field]), 0) * 100) / 100
 export const count = (n, one, many) => `${n} ${n === 1 ? one : many}`
 
-// Período: um ano ("2026") ou "ALL". As despesas vêm todas da API e o período filtra-se aqui, no browser.
+// Período: um ano ("2026") ou "ALL". As despesas vêm todas da API e o período filtra-se aqui, no browser
 export const inPeriod = (date, period) => period === 'ALL' || date.startsWith(period)
 export const periodLabel = (period) => (period === 'ALL' ? 'Todos os registos' : period)
 
@@ -25,7 +25,7 @@ export function interventionsText(maintenances, period) {
   return sameYear ? `${n} em ${period}` : `${n} desde ${formatMonthYearLong(dates[0])}`
 }
 
-/** Nova validade de um IUC/seguro pago: um ano depois da data do pagamento (o Figma não pede esta data) */
+/** Nova validade de um IUC/seguro pago: um ano depois da data do pagamento  */
 export function oneYearAfter(iso) {
   const [y, m, d] = iso.split('-').map(Number)
   const last = new Date(Date.UTC(y + 1, m, 0)).getUTCDate()

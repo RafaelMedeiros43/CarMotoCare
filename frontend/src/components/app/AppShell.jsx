@@ -1,6 +1,7 @@
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import Icon from '../Icons.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
+import NotificationsMenu from './NotificationsMenu.jsx'
 import useGarage from '../../hooks/useGarage.js'
 import { formatToday, initials } from '../../lib/format.js'
 import '../../styles/app.css'
@@ -18,21 +19,24 @@ const NAV = [
 const TITLES = Object.fromEntries(NAV.map((n) => [n.to, n.label]))
 TITLES['/veiculos/novo'] = 'Adicionar veículo'
 TITLES['/conta'] = 'Conta'
-TITLES['/ajuda'] = 'Como utilizar'
+TITLES['/ajuda'] = 'Ajuda'
 
-// Páginas que pertencem a uma área do menu (ex.: Monitorização > Emparelhar dispositivo; Manutenção > Peças e intervalos > Editar intervalo)
+// Páginas que pertencem  área do menu ( Monitorização > Emparelhar dispositivo; Manutenção > Peças e intervalos > Editar intervalo)
 const SUBPAGES = {
   '/dispositivo': { area: '/monitorizacao', current: 'Dispositivo OBD' },
   '/dispositivo/emparelhar': { area: '/monitorizacao', current: 'Emparelhar dispositivo' },
   '/localizacao': { area: '/monitorizacao', current: 'Localização' },
   '/oficinas': { area: '/manutencao', current: 'Oficinas próximas' },
+  '/inspecao/registar': { area: '/inspecao', current: 'Registar inspeção' },
 }
+const INSPECTION_DETAIL = /^\/inspecao\/[^/]+\/[^/]+$/
 const EDIT_INTERVAL = /^\/manutencao\/pecas\/[^/]+$/
 const subpageOf = (pathname) => {
   if (SUBPAGES[pathname]) return { ...SUBPAGES[pathname], trail: [] }
   if (EDIT_INTERVAL.test(pathname)) {
     return { area: '/manutencao', trail: [{ to: '/manutencao/pecas', label: 'Peças e intervalos' }], current: 'Editar intervalo' }
   }
+  if (INSPECTION_DETAIL.test(pathname)) return { area: '/inspecao', trail: [], current: 'Detalhes da inspeção' }
   return null
 }
 const areaOf = (pathname) => subpageOf(pathname)?.area
@@ -50,7 +54,6 @@ export default function AppShell() {
 
   const cars = vehicles.filter((v) => v.type === 'CARRO').length
   const bikes = vehicles.filter((v) => v.type === 'MOTO').length
-  const hasOpenAlerts = alerts.some((a) => a.status === 'ABERTO')
   const name = user?.name ?? ''
 
   const handleLogout = () => {
@@ -135,10 +138,7 @@ export default function AppShell() {
             )}
           </nav>
           <div className="app-top__tools">
-            <Link to="/lembretes" className="app-top__bell" aria-label="Notificações">
-              <Icon name="bell" size={20} />
-              {hasOpenAlerts && <span className="app-top__dot" aria-hidden="true" />}
-            </Link>
+            <NotificationsMenu alerts={alerts} vehicles={vehicles} />
             <span className="app-top__date">{formatToday()}</span>
             <button type="button" className="app-top__logout" onClick={handleLogout} aria-label="Terminar sessão" title="Terminar sessão">
               <Icon name="logOut" size={18} />

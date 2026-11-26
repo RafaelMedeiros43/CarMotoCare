@@ -1,4 +1,4 @@
-// Formatação em português de Portugal (datas, km, euros). Datas "AAAA-MM-DD" 
+// Formatação em português de Portugal (datas, km, euros) Datas "AAAA-MM-DD" 
 
 
 const MONTHS_SHORT = ['jan.', 'fev.', 'mar.', 'abr.', 'mai.', 'jun.', 'jul.', 'ago.', 'set.', 'out.', 'nov.', 'dez.']
@@ -69,7 +69,7 @@ export function initials(name = '') {
   return `${first}${last}`.toUpperCase()
 }
 
-/** Minutos desde uma data/hora ISO. */
+/** Minutos desde uma data/hora ISO */
 export const minutesSince = (iso) => (Date.now() - new Date(iso).getTime()) / 60000
 
 export const currentYear = () => new Date().getFullYear()

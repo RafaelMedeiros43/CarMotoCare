@@ -3,9 +3,9 @@ import useApi from './useApi.js'
 import { currentYear } from '../lib/format.js'
 
 /**
- * Custo de manutenção do ano corrente por veículo: { [vehicleId]: euros }.
+ * Custo de manutenção do ano corrente por veículo: { [vehicleId]: euros }
  * Usa GET /vehicles/{id}/expenses (categoria MANUTENCAO). Se o pedido de um veículo falhar,
- * esse veículo fica de fora e o cartão simplesmente não mostra a linha de custos.
+ * esse veículo fica de fora e o cartão simplesmente não mostra a linha de custos
  */
 export default function useMaintenanceCosts(vehicles) {
   const api = useApi()

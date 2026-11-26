@@ -17,7 +17,7 @@ const daysFromNow = (n) => {
 const vehicles = [
   {
     id: GOLF, type: 'CARRO', brand: 'Volkswagen', model: 'Golf', firstRegistration: '2021-06',
-    plate: 'AB-24-CD', km: 68420, openAlerts: 1,
+    plate: 'AB-24-CD', km: 68420, openAlerts: 3,
     nextService: { partId: 'p1', partName: 'Pastilhas de travão', targetKm: 75000, kmRemaining: 6580, dueDate: null },
   },
   {
@@ -84,12 +84,11 @@ const KM_PER_DEG = 111.32
 const distanceKm = (north, east) => Math.sqrt(north ** 2 + east ** 2)
 const norm = (t) => t.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
 
+const hoursAgo = (h) => new Date(Date.now() - h * 3600 * 1000).toISOString()
 const alerts = [
-  {
-    id: 'a1', vehicleId: GOLF, type: 'INSPECAO', trigger: 'DATA', status: 'ABERTO',
-    title: 'Inspeção periódica', dueDate: daysFromNow(18), targetKm: null, kmRemaining: null,
-    createdAt: new Date().toISOString(),
-  },
+  { id: 'a1', vehicleId: GOLF, type: 'INSPECAO', trigger: 'DATA', status: 'ABERTO', title: 'Inspeção periódica', dueDate: daysFromNow(18), targetKm: null, kmRemaining: null, createdAt: hoursAgo(2) },
+  { id: 'a2', vehicleId: GOLF, type: 'MANUTENCAO', trigger: 'KM', status: 'ABERTO', title: 'Pastilhas de travão', dueDate: null, targetKm: 75000, kmRemaining: 6580, createdAt: hoursAgo(26) },
+  { id: 'a3', vehicleId: GOLF, type: 'SEGURO', trigger: 'DATA', status: 'ABERTO', title: 'Seguro', dueDate: daysFromNow(95), targetKm: null, kmRemaining: null, createdAt: hoursAgo(75) },
 ]
 
 const maintenances = {
@@ -123,8 +122,18 @@ const expenses = {
 
 // GET /vehicles/{id}/inspections (a rota ainda não existe na EAPI Web)
 const inspections = {
-  [GOLF]: [],
-  [MT07]: [{ id: 'i1', vehicleId: MT07, date: '2026-11-03', result: 'REPROVADA', amount: 29.6, km: 24180, validUntil: null, deficiencies: [], createdAt: new Date().toISOString() }],
+  [GOLF]: [
+    { id: 'i2', vehicleId: GOLF, date: '2025-11-24', result: 'APROVADA', amount: 38.45, km: 55210, validUntil: daysFromNow(18),
+      deficiencies: [{ description: 'Desgaste irregular dos pneus traseiros', severity: 'LIGEIRA' }], createdAt: '2025-11-24T10:00:00Z' },
+    { id: 'i3', vehicleId: GOLF, date: '2024-11-22', result: 'APROVADA', amount: 37.2, km: 44870, validUntil: '2025-11-22', deficiencies: [], createdAt: '2024-11-22T10:00:00Z' },
+  ],
+  [MT07]: [
+    { id: 'i1', vehicleId: MT07, date: '2026-11-03', result: 'REPROVADA', amount: 29.6, km: 24180, validUntil: null,
+      deficiencies: [{ description: 'Eficácia de travagem insuficiente', severity: 'GRAVE' }, { description: 'Pneu traseiro abaixo do limite legal', severity: 'GRAVE' }], createdAt: '2026-11-03T10:00:00Z' },
+    { id: 'i4', vehicleId: MT07, date: '2025-10-20', result: 'APROVADA', amount: 29.6, km: 18450, validUntil: '2026-10-20',
+      deficiencies: [{ description: 'Desgaste ligeiro da corrente de transmissão', severity: 'LIGEIRA' }, { description: 'Fuga ligeira de óleo no garfo', severity: 'LIGEIRA' }], createdAt: '2025-10-20T10:00:00Z' },
+    { id: 'i5', vehicleId: MT07, date: '2024-10-18', result: 'APROVADA', amount: 28.4, km: 11320, validUntil: '2025-10-18', deficiencies: [], createdAt: '2024-10-18T10:00:00Z' },
+  ],
 }
 
 const obdStates = {
@@ -196,11 +205,42 @@ export const mockApi = {
   },
   // GET /vehicles/{id}/inspections
   listInspections: (id) => later([...(inspections[id] ?? [])]),
+  // GET /vehicles/{id}/inspections/{inspectionId}
+  getInspection: (id, inspectionId) => {
+    const found = (inspections[id] ?? []).find((i) => i.id === inspectionId)
+    return found ? later({ ...found }) : notFound('Inspeção não encontrada')
+  },
+  // POST /vehicles/{id}/inspections: a km vem do veículo. Aprovada: validade, fecha o alerta e cria o prazo seguinte
+  createInspection: (id, data) => {
+    const vehicle = vehicles.find((v) => v.id === id)
+    if (!vehicle) return notFound('Veículo não encontrado')
+    if (data.date > iso(new Date())) return invalid('date', 'A data não pode ser no futuro.')
+    if (!(data.amount >= 0)) return invalid('amount', 'O valor não pode ser negativo.')
+    const now = new Date().toISOString()
+    const approved = data.result === 'APROVADA'
+    const [y, m, d] = data.date.split('-').map(Number)
+    const validUntil = approved ? `${y + 1}-${String(m).padStart(2, '0')}-${String(d).padStart(2, '0')}` : null
+    const inspection = { id: crypto.randomUUID(), vehicleId: id, date: data.date, result: data.result, amount: data.amount, km: vehicle.km, validUntil, deficiencies: data.deficiencies ?? [], createdAt: now }
+    inspections[id] = [inspection, ...(inspections[id] ?? [])]
+    expenses[id] = [{ id: crypto.randomUUID(), category: 'INSPECAO', date: data.date, amount: data.amount, description: null, km: null }, ...(expenses[id] ?? [])]
+    let nextDeadline = null
+    const closedAlertIds = []
+    if (approved) {
+      const list = (deadlines[id] ??= [])
+      const pending = list.find((x) => x.type === 'INSPECAO' && x.status === 'PENDENTE')
+      if (pending) Object.assign(pending, { status: 'CONCLUIDO', paidAt: data.date, amount: data.amount })
+      nextDeadline = { id: crypto.randomUUID(), vehicleId: id, type: 'INSPECAO', status: 'PENDENTE', dueDate: validUntil, paidAt: null, amount: null, description: null, createdAt: now }
+      list.push(nextDeadline)
+      for (const a of alerts) if (a.vehicleId === id && a.type === 'INSPECAO' && a.status === 'ABERTO') { a.status = 'FECHADO'; closedAlertIds.push(a.id) }
+      vehicle.openAlerts = alerts.filter((a) => a.vehicleId === id && a.status === 'ABERTO').length
+    }
+    return later({ ...inspection, nextDeadline, closedAlertIds })
+  },
   // POST /vehicles/{id}/expenses (pagar IUC ou seguro): { category, date, amount > 0, description?, validUntil }.
   // Como no servidor: fecha o prazo pendente desse tipo (ou cria-o) e cria o seguinte na data `validUntil`
   payExpense: (id, data) => {
-    if (!(data.amount > 0)) return invalid('amount', 'O valor tem de ser superior a 0,00 €.')
-    if (data.date > iso(new Date())) return invalid('date', 'A data não pode ser no futuro.')
+    if (!(data.amount > 0)) return invalid('amount', 'O valor tem de ser superior a 0,00 €')
+    if (data.date > iso(new Date())) return invalid('date', 'A data não pode ser no futuro')
     const list = (deadlines[id] ??= [])
     const now = new Date().toISOString()
     const pending = list.find((d) => d.type === data.category && d.status === 'PENDENTE')
