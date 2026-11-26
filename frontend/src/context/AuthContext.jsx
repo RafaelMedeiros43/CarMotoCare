@@ -33,11 +33,11 @@ export function AuthProvider({ children }) {
     setAccount(null)
   }, [])
 
-  // Configurado durante o render (e não num useEffect) para os pedidos dos
-  // componentes filhos já usarem o token atual.
+  // Configurado durante o render ( não useEffect) para os pedidos dos
+  // componentes futuros já usarem o token atual
   configureClient({ tokenGetter: () => token, unauthorizedHandler: logout })
 
-  // Com token guardado, vai buscar os dados da conta.
+  // Com token guardado, vai buscar os dados da conta
   useEffect(() => {
     if (!token || isMock) return
     let cancelled = false
@@ -58,7 +58,7 @@ export function AuthProvider({ children }) {
     await login(email, password) // depois de criar a conta, inicia sessão
   }, [login])
 
-  // Guarda alterações do perfil (nome, e-mail, palavra-passe). Na sessão  teste só muda em memória
+  // Guarda alterações do perfil (nome, e-mail, palavra-passe). Na sessão  teste só muda em memória por agr
   const updateProfile = useCallback(async (changes) => {
     if (isMock) {
       setAccount((current) => {

@@ -1,0 +1,61 @@
+/* Campos (partilhados pelo registo e pelo login) */
+.field { display: grid; gap: .45rem; margin-bottom: 1.15rem; }
+.field label { font-weight: 500; color: var(--color-ink); font-size: .82rem; }
+.field input { width: 100%; height: 44px; font: inherit; font-size: .9rem; color: var(--color-ink); padding: 0 .95rem; background: #fff;
+  border: 1px solid #cfd8e6; border-radius: var(--radius); }
+.field input::placeholder { color: var(--color-ink); opacity: .85; }
+.field input:focus { outline: 2px solid var(--color-primary); border-color: transparent; }
+.field input[aria-invalid='true'] { border-color: var(--color-danger); }
+.field__wrap { position: relative; }
+.field__wrap input { padding-right: 2.8rem; }
+.field__eye { position: absolute; right: .55rem; top: 50%; transform: translateY(-50%); display: grid; place-items: center;
+  width: 32px; height: 32px; border: 0; background: none; color: #64748b; cursor: pointer; border-radius: 6px; }
+.field__eye:hover { color: var(--color-primary); }
+.field__error { color: var(--color-danger); font-size: .8rem; }
+.form-error { background: #fef2f2; color: var(--color-danger); border-radius: var(--radius); padding: .7rem .9rem; margin-bottom: 1rem; font-size: .88rem; }
+
+/* Registo (página 2 do Figma)*/
+.reg { background: var(--color-bg-alt); padding: 3rem 1.5rem 4rem; min-height: calc(100vh - 88px); display: grid; align-items: start; justify-items: center; }
+.reg__card { width: min(100%, 1100px); min-height: 675px; display: grid; grid-template-columns: 476px 1fr; border-radius: 20px; overflow: hidden; background: #fff; box-shadow: 0 20px 50px -30px rgba(16,30,53,.3); }
+
+.reg__aside { background: var(--color-navy); color: #fff; padding: 3rem 2.6rem 2.6rem; display: flex; flex-direction: column; }
+.reg__tag { align-self: flex-start; background: var(--color-bg-hero); color: var(--color-primary); border-radius: 6px; padding: .3rem .6rem;
+  font-size: .62rem; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+.reg__aside h1 { color: #fff; font-size: 2.75rem; line-height: 1.1; font-weight: 700; letter-spacing: -0.03em; margin: 1.6rem 0 1.4rem; max-width: 340px; }
+.reg__lead { color: #b6c2d4; font-size: 1rem; line-height: 1.65; max-width: 370px; }
+
+.garage { display: flex; align-items: center; gap: 1.4rem; margin-top: 4.2rem; padding: 1.4rem 1.5rem; background: #1b2a45; border-radius: 12px; color: #7ea1f1; }
+.garage__sep { width: 1px; align-self: stretch; background: rgba(255,255,255,.12); }
+.garage__text { display: grid; gap: .3rem; margin-left: .2rem; }
+.garage__text strong { color: #fff; font-size: .85rem; font-weight: 600; }
+.garage__text small { color: #b6c2d4; font-size: .72rem; }
+
+.reg__list { list-style: none; margin: auto 0 0; padding: 3rem 0 0; display: grid; gap: .8rem; font-size: .85rem; color: #dbe4f2; }
+.reg__list li { display: flex; align-items: center; gap: .7rem; }
+.reg__list .icon { color: #7ea1f1; }
+
+.reg__form { padding: 2.6rem 4rem 2.4rem; }
+.reg__back { display: inline-flex; align-items: center; gap: .5rem; font-size: .75rem; color: #64748b; margin-bottom: 1.8rem; }
+.reg__back:hover { color: var(--color-primary); }
+.reg__form h2 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.02em; margin-bottom: .5rem; }
+.reg__sub { font-size: .88rem; margin-bottom: 1.7rem; }
+.reg__submit { width: 100%; height: 44px; margin-top: .4rem; }
+.reg__alt { text-align: center; font-size: .82rem; margin-top: 1.4rem; padding-top: 1.4rem; border-top: 1px solid var(--color-border); }
+.reg__alt a { color: var(--color-primary); font-weight: 600; margin-left: .3rem; }
+
+@media (max-width: 900px) {
+  .reg__card { grid-template-columns: 1fr; }
+  .reg__aside { padding: 2rem 1.6rem; }
+  .reg__aside h1 { font-size: 2rem; }
+  .garage { margin-top: 2rem; }
+  .reg__list { padding-top: 1.6rem; }
+  .reg__form { padding: 2rem 1.6rem; }
+}
+
+/* Login (página 3 do Figma): reutiliza o layout do registo*/
+.reg__submit { display: inline-flex; align-items: center; justify-content: center; gap: .5rem; }
+.info-box { display: flex; gap: .8rem; align-items: flex-start; margin-top: 1.3rem; padding: 1rem 1.1rem; background: var(--color-bg-hero); border-radius: 10px; color: var(--color-primary); }
+.info-box div { display: grid; gap: .25rem; }
+.info-box strong { color: var(--color-ink); font-size: .8rem; font-weight: 600; }
+.info-box span { color: var(--color-text); font-size: .78rem; line-height: 1.5; }
+.info-box + .reg__alt { margin-top: 1.5rem; }

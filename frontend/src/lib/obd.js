@@ -8,7 +8,7 @@ export const vehicleLabel = (v) => `${v.brand} ${v.model} · ${formatPlateDots(v
 /**
  * Estado da ligação do OBD de um veículo:
  * 'unpaired' (sem dispositivo) | 'waiting' (emparelhado, sem leituras) | 'fresh' (leitura recente) | 'stale' (leitura antiga).
- * `device` vem de GET /obd-device e `obd` de GET /obd-state.
+ * `device` vem de GET /obd-device e `obd` de GET /obd-state
  */
 export function connectionOf(obd, device) {
   if (!device && !obd?.deviceId) return 'unpaired'

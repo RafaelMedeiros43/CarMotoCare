@@ -1,8 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 /**
- * Pedido com estado: `load` corre quando `key` muda (key nulo = não pedir).
- * Devolve { loading, data, error, reload }. `load` não precisa de ser estável.
+ * Pedido com estado: `load` corre quando `key` muda (key nulo = não pedir)
+ * Devolve { loading, data, error, reload }. `load` não precisa de ser estável
  */
 export default function useRemote(load, key) {
   const loadRef = useRef(load)

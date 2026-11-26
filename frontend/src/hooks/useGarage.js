@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react'
 import useApi from './useApi.js'
 
-// Os alertas são acessórios: se falharem, os veículos continuam a aparecer.
+// Os alertas são acessórios: se falharem, os veículos continuam a aparecer
 const fetchGarage = (api) => Promise.all([api.listVehicles(), api.listAlerts().catch(() => [])])
 
 /** Veículos e alertas do utilizador + veículo selecionado (partilhado pelo menu lateral e pelas páginas) */
@@ -10,7 +10,7 @@ export default function useGarage() {
   const [state, setState] = useState({ vehicles: null, alerts: [], error: '' })
   const [selectedId, setSelectedId] = useState(null)
 
-  // Guarda o resultado. Mantém o veículo selecionado se ainda existir; senão escolhe o primeiro.
+  // Guarda o resultado. Mantém o veículo selecionado se ainda existir; senão escolhe o primeiro
   const apply = useCallback(([vehicles, alerts]) => {
     setState({ vehicles, alerts, error: '' })
     setSelectedId((current) => (vehicles.some((v) => v.id === current) ? current : vehicles[0]?.id ?? null))
@@ -24,7 +24,7 @@ export default function useGarage() {
     return () => { cancelled = true }
   }, [api, apply])
 
-  // Volta a pedir os dados (ex.: depois de remover um veículo). Se falhar, mantém a lista e mostra o erro.
+  // Volta a pedir os dados (ex.: depois de remover um veículo). Se falhar, mantém a lista e mostra o erro
   const reload = useCallback(async () => {
     try {
       apply(await fetchGarage(api))

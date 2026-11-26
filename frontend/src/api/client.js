@@ -13,7 +13,7 @@ export class ApiError extends Error {
 let getToken = () => null
 let onUnauthorized = () => {}
 
-// Chamado pelo AuthContext para o cliente saber o token atual e reagir a 401.
+// Chamado pelo AuthContext para o cliente saber o token atual e reagir a 401
 export function configureClient({ tokenGetter, unauthorizedHandler }) {
   getToken = tokenGetter
   onUnauthorized = unauthorizedHandler

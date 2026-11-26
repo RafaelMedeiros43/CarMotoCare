@@ -25,7 +25,7 @@ export const findPlace = (text) => {
 
 const TILE = 256
 
-/** Projeção Web Mercator (a das tiles do OpenStreetMap): lat/lon -> píxeis do mundo no zoom z */
+/** Projeção Web Mercator ( OpenStreetMap): lat/lon ->*/
 export function project(lat, lon, z) {
   const world = TILE * 2 ** z
   const sin = Math.sin((lat * Math.PI) / 180)
@@ -35,7 +35,7 @@ export function project(lat, lon, z) {
   }
 }
 
-/** Maior zoom em que o ponto mais distante (km) fica a menos de `maxPx` píxeis do centro */
+/** Maior zoom em que o ponto mais distante (km) */
 export function fitZoom(maxKm, lat, maxPx = 190) {
   for (let z = 16; z >= 7; z--) {
     const metersPerPx = (156543.03 * Math.cos((lat * Math.PI) / 180)) / 2 ** z

@@ -1,0 +1,32 @@
+/* Figma "26 Alertas e lembretes". Reutiliza maintenance.css (filtros, cartões) e .mon-badge */
+.rem-card { flex: none; width: auto; padding: 24px; gap: 0; }
+.rem-list { list-style: none; margin: 0; padding: 0; }
+.rem-row { display: grid; grid-template-columns: 56px minmax(0, 1fr) auto auto; gap: 20px; align-items: center; padding: 22px 0; border-bottom: 1px solid var(--soft, #e6ebf3); }
+.rem-row:last-child { border-bottom: 0; }
+.rem-row__icon { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 12px; background: #fff3dd; color: #b26a00; }
+.rem-row__icon.is-blue { background: var(--blue-bg); color: var(--color-primary); }
+.rem-row__tags { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 6px; }
+.rem-row h3 { font-size: 22px; font-weight: 600; letter-spacing: -0.3px; }
+.rem-row__main p { margin-top: 4px; font-size: 13px; color: var(--muted); }
+.rem-row__when { display: flex; flex-direction: column; gap: 4px; min-width: 140px; }
+.rem-row__when small { font-size: 12px; color: var(--muted); }
+.rem-row__when strong { font-size: 20px; font-weight: 600; color: var(--color-ink); }
+.rem-row__when strong.is-late { color: #b42318; }
+.rem-row__btn { white-space: nowrap; }
+.rem-tag--late { background: #fde8e6; color: #b42318; }
+.rem-tag--blue { background: var(--blue-bg); color: var(--color-primary); }
+.rem-skel { display: flex; flex-direction: column; gap: 22px; padding: 12px 0; }
+.rem-skel .mon-skel { height: 56px; }
+.rem-other { flex: none; justify-content: flex-start; align-items: center; flex-direction: row; width: auto; display: flex; align-items: center; gap: 18px; padding: 24px; text-align: left; font: inherit; cursor: pointer; color: var(--muted); }
+.rem-other span { display: flex; flex-direction: column; align-items: flex-start; gap: 4px; }
+.rem-other strong { font-size: 15px; color: var(--color-ink); }
+.rem-other small { font-size: 14px; }
+.rem-other:hover { border-color: var(--color-primary); }
+.rem-note { font-size: 13px; color: var(--muted); }
+@media (max-width: 900px) {
+  .rem-row { grid-template-columns: 48px minmax(0, 1fr); gap: 12px 16px; }
+  .rem-row__icon { width: 48px; height: 48px; }
+  .rem-row__when, .rem-row__btn { grid-column: 2; }
+  .rem-row__btn { justify-self: start; }
+  .rem-row h3 { font-size: 18px; }
+}
