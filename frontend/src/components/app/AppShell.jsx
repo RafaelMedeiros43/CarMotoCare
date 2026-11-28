@@ -58,16 +58,13 @@ export default function AppShell() {
 
   const handleLogout = () => {
     logout()
-    navigate('/')
-  }
+    navigate('/') }
 
   return (
     <div className="app">
       <aside className="app-side">
         <Link to="/painel" className="app-side__brand" aria-label="CarMotoCare, painel">
-          <span className="app-side__logo"><Icon name="car" size={21} /></span>
-          CarMotoCare
-        </Link>
+          <span className="app-side__logo"><Icon name="car" size={21} /></span> CarMotoCare </Link>
 
         <div className="app-side__garage">
           <p className="app-side__eyebrow">GARAGEM PESSOAL</p>
@@ -99,9 +96,7 @@ export default function AppShell() {
           </div>
 
           <Link to="/ajuda" className="app-side__help">
-            <Icon name="circleHelp" size={18} />
-            Como utilizar
-          </Link>
+            <Icon name="circleHelp" size={18} /> Como utilizar</Link>
 
           <hr className="app-side__sep" />
 

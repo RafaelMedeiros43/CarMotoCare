@@ -4,12 +4,11 @@ import AuthAside from '../../components/layout/AuthAside.jsx'
 import PasswordField from '../../components/ui/PasswordField.jsx'
 import Icon from '../../components/ui/Icons.jsx'
 import { useAuth } from '../../context/AuthContext.jsx'
-import { AFTER_LOGIN_PATH, MOCK_AUTH_ENABLED } from '../../config.js'
+import { AFTER_LOGIN_PATH } from '../../config.js'
 import './auth.css'
-import './dev.css'
 
 export default function Login() {
-  const { login, mockLogin, isAuthenticated } = useAuth()
+  const { login, isAuthenticated } = useAuth()
   const navigate = useNavigate()
   const [form, setForm] = useState({ email: '', password: '' })
   const [error, setError] = useState('')
@@ -33,12 +32,6 @@ export default function Login() {
     }
   }
 
-  // TEMPORÁRIO: entra sem login, com dados de exemplo (só em desenvolvimento)
-  const onSkip = () => {
-    mockLogin()
-    navigate(AFTER_LOGIN_PATH)
-  }
-
   return (
     <section className="reg">
       <div className="reg__card">
@@ -54,7 +47,7 @@ export default function Login() {
           <form onSubmit={onSubmit}>
             <div className="field">
               <label htmlFor="email">E-mail</label>
-              <input id="email" name="email" type="email" autoComplete="email" placeholder="miguel.santos@exemplo.pt" required
+              <input id="email" name="email" type="email" autoComplete="email" placeholder="o.seu@email.pt" required
                 value={form.email} onChange={onChange} />
             </div>
 
@@ -64,13 +57,6 @@ export default function Login() {
             <button className="btn btn--primary reg__submit" disabled={loading}>
               {loading ? 'A entrar…' : <><Icon name="arrowRight" size={16} /> Iniciar sessão</>}
             </button>
-
-            {/* TEMPORÁRIO: entra sem login (dados de exemplo) enquanto o backend não tem login*/}
-            {MOCK_AUTH_ENABLED && (
-              <button type="button" className="btn btn--ghost reg__submit dev-skip" onClick={onSkip}>
-                Seguinte <Icon name="arrowRight" size={16} />
-              </button>
-            )}
           </form>
 
           <div className="info-box">
