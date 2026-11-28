@@ -89,7 +89,6 @@
 .app-top__tools { display: flex; align-items: center; gap: 22px; font-size: 12px; color: var(--muted); }
 .app-top__bell { position: relative; display: grid; place-items: center; width: 28px; height: 28px; color: var(--color-text-strong); }
 .app-top__dot { position: absolute; top: 1px; right: 3px; width: 9px; height: 9px; border-radius: 100px; background: var(--color-danger); border: 2px solid #fff; box-sizing: content-box; margin: -2px; }
-.app-top__mock { padding: 4px 8px; border-radius: 6px; background: var(--amber-bg); color: var(--amber); font-size: 11px; font-weight: 600; }
 .app-top__logout { display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 0; border-radius: 6px; background: none; color: var(--muted); cursor: pointer; }
 .app-top__logout:hover { background: var(--color-bg-alt); color: var(--color-ink); }
 

@@ -45,7 +45,7 @@ const plural = (n, one, many) => `${n} ${n === 1 ? one : many}`
 
 /** Estrutura das páginas com sessão iniciada: menu lateral + barra superior (Figma "04 Painel") */
 export default function AppShell() {
-  const { user, logout, isMock } = useAuth()
+  const { user, logout } = useAuth()
   const { pathname } = useLocation()
   const subpage = subpageOf(pathname)
   const navigate = useNavigate()
